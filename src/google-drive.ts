@@ -14,7 +14,7 @@ const drive = g_drive({
 });
 
 export interface GoogleDriveFileMeta {
-    name: string|null|undefined,
+    name: string,
     mimetype: string|null|undefined,
     timestamp: Moment|null|undefined
 }
@@ -61,7 +61,7 @@ export class GoogleDriveFolder {
 
             if (res.data.files) {
                 files.push(...res.data.files.map<GoogleDriveFileMeta>(f => ({
-                    name: f.name,
+                    name: f.name!,
                     mimetype: f.mimeType,
                     timestamp: f.createdTime ? moment(f.createdTime) : undefined
                 })));

@@ -1,6 +1,10 @@
 import { Network, disconnect, list_networks, selectNetwork, state } from 'rpi-fi';
 
-export async function connectToConfiguredSsid(ssid:string) {
+/**
+ * Connect to a network pre-configured in wpa_supplicant.conf
+ * @param ssid 
+ */
+export async function connectKnownNetwork(ssid:string) {
     let networks = await list_networks();
     let network = networks.find(n => n.ssid == ssid);
     if (network) {
@@ -9,7 +13,7 @@ export async function connectToConfiguredSsid(ssid:string) {
             throw new WifiConnectionError(ssid);
         }
     } else {
-        throw new WifiError(`Network with SSID ${ssid} is not configured.`);
+        throw new WifiError(`Network with SSID '${ssid}' is not configured.`);
     }
 }
 
