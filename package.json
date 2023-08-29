@@ -30,6 +30,7 @@
   "homepage": "https://github.com/Qvazar/rpi-dashcam-cloud-relay#readme",
   "devDependencies": {
     "@types/async": "^3.2.20",
+    "@types/bunyan": "^1.8.8",
     "@types/node": "^20.5.6",
     "@types/node-fetch": "^2.6.4",
     "typescript": "^5.2.2"
@@ -38,6 +39,7 @@
     "@googleapis/drive": "^8.3.1",
     "@googleapis/oauth2": "^1.0.4",
     "async": "^3.2.4",
+    "bunyan": "^1.8.15",
     "moment": "^2.29.4",
     "node-fetch": "^2.7.0",
     "node-html-parser": "^6.1.6",

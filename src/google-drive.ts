@@ -1,3 +1,4 @@
+import { Blob } from 'buffer';
 import { auth as g_auth } from "@googleapis/oauth2";
 import { drive_v3, drive as g_drive } from "@googleapis/drive";
 import moment, { Moment } from "moment";
@@ -29,7 +30,7 @@ export class GoogleDriveFolder {
         this._parentFolderId = parentFolderId;
     }
 
-    getFolder(folderId:string) {
+    getFolder(folderId?:string) {
         return new GoogleDriveFolder(folderId);
     }
 
@@ -74,7 +75,7 @@ export class GoogleDriveFolder {
     }
 }
 
-export const GoogleDrive = new GoogleDriveFolder();
+export const googleDrive = new GoogleDriveFolder();
 
 class GoogleDriveResponseError<T> extends Error {
     response: GaxiosResponse<T>;

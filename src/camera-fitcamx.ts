@@ -1,31 +1,51 @@
+import { Blob } from 'buffer';
 import { map } from "async";
 import { basename } from "path";
-import fetch, { Blob, Response } from "node-fetch";
+import fetch, { Response } from "node-fetch";
 import { parse } from 'node-html-parser';
-import { connectKnownNetwork } from "./wifi";
+import { connectKnownNetwork, disconnect } from "./wifi";
 import moment, { Moment } from "moment";
 
-export function getCamera(ssid:string, ipAddress:string) {
-    return new FitcamxCamera(ssid, ipAddress);
+export function getCamera(ssid:string) {
+    return new FitcamxCamera(ssid);
 }
 
+const CAMERA_IPADDRESS = "192.168.1.254";
 const LOCKED_VIDEO_FOLDERS = ["/CARDV/EMR/", "/CARDV/EMR_E/"];
 
 class FitcamxCamera {
     ssid: string
-    ipAddress: string
 
     /**
      *
      */
-    constructor(ssid:string, ipAddress:string) {
+    constructor(ssid:string) {
         this.ssid = ssid;
-        this.ipAddress = ipAddress;
+    }
+
+    async connect<R>(cameraControl: (camera:FitcamxCameraController) => Promise<R>) {
+        await connectKnownNetwork(this.ssid);
+        try {
+            return await cameraControl(new FitcamxCameraController(this));
+        } finally {
+            await disconnect();
+        }
+    }
+}
+
+class FitcamxCameraController {
+    private _camera:FitcamxCamera
+
+    /**
+     *
+     */
+    constructor(camera:FitcamxCamera) {
+        this._camera = camera;
     }
 
     async listLockedVideos() {
         const files:Array<FitcamxFile> = (await map(LOCKED_VIDEO_FOLDERS, async (folder:string) => {
-            const res = checkStatus(await fetch(`http://${this.ipAddress}${folder}`));
+            const res = checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`));
             const html = parse(await res.text());
             const videoFiles = html.querySelectorAll("tr > td:first-child > a")
                 .map(e => {
@@ -33,7 +53,7 @@ class FitcamxCamera {
                     if (!path) {
                         throw new Error("Empty video path!");
                     }
-                    return new FitcamxFile(`http://${this.ipAddress}${path}`);
+                    return new FitcamxFile(path);
                 });
             return videoFiles;
         })).flat();
@@ -41,40 +61,41 @@ class FitcamxCamera {
         return files;
     }
 
-    connectWifi(): Promise<void> {
-        return connectKnownNetwork(this.ssid);
+    async deleteVideo(path:string) {
+        const file = new FitcamxFile(path);
+        return file.delete();
     }
 }
 
 class FitcamxFile {
     name:string
-    url:string
+    path:string
     timestamp:Moment
     private _content:FitcamxFileContent|undefined = undefined
 
     /**
      *
      */
-    constructor(url:string) {
-        this.name = basename(url);
-        this.url = url;
+    constructor(path:string) {
+        this.name = basename(path);
+        this.path = path;
         this.timestamp = moment(this.name.substring(0, 14), "YYYYMMDDHHmmss", true);
     }
 
     async getContent() {
         if (!this._content) {
-            const res = checkStatus(await fetch(this.url));
+            const res = checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`));
             this._content = {
-                blob: await res.blob(),
+                blob: (await res.blob()) as Blob,
                 mimetype: res.headers.get('Content-Type') ?? "application/octet-stream"
             };
         }
 
-        return this._content;
+        return this._content!;
     }
 
     async delete() {
-        checkStatus(await fetch(this.url + '?del=1'));
+        checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}?del=1`), 404);
     }
 }
 
@@ -92,8 +113,8 @@ class FitcamxResponseError extends Error {
 	}
 }
 
-function checkStatus(response : Response) {
-	if (response.status >= 200 && response.status < 300) {
+function checkStatus(response : Response, ...additionalAllowed:number[]) {
+	if ((response.status >= 200 && response.status < 300) || additionalAllowed.includes(response.status)) {
 		return response;
 	} else {
 		throw new FitcamxResponseError(response);
