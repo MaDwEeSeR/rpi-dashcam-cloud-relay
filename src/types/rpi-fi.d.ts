@@ -1,13 +1,14 @@
 declare module "rpi-fi" {
-    interface Network { id:int, ssid:string, bssid:string, state:string }
-    
-    interface State { id:int, ssid:string, bssid:string, wpa_state:string, ipAddress: string }
-
     export function disconnect() : Promise<boolean>
 
-    export function list_networks() : Promise<[Network]>
+    interface Network { id:int, ssid:string, bssid:string, state:string }
+    export function list_networks() : Promise<Network[]>
 
     export function selectNetwork(id:int) : Promise<boolean>
 
+    interface ScanResult { bssid:string, frequency:number, signalLevel:number, flags:string, ssid:string }
+    export function scan() : Promise<ScanResult[]>
+
+    interface State { id:int, ssid:string, bssid:string, wpa_state:string, ipAddress: string }
     export function state() : Promise<State>
 }

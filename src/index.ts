@@ -1,15 +1,14 @@
 import { Blob } from 'buffer';
 import { Moment } from "moment";
-import { googleDrive } from "./google-drive";
-import { currentNetwork } from "./wifi";
-import { isEmpty, sleep, stringCompare } from "./util";
-import { logger } from "./logger";
-import { getCamera } from "./camera-fitcamx";
+import { googleDrive } from "./google-drive.js";
+import { isEmpty, sleep, stringCompare } from "./util.js";
+import { logger } from "./logger.js";
+import { getCamera } from "./camera-fitcamx.js";
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
 const HEARTBEAT_SLOW_DELTA = 3600;
-const HEARTBEAT_FAST_DELTA = 5;
+const HEARTBEAT_FAST_DELTA = 30;
 
 if (isEmpty(CAMERA_SSID)) {
     logger.error("CAMERA_SSID not set.")
@@ -23,63 +22,70 @@ if (isEmpty(CAMERA_SSID)) {
     // let filenamesInCloud:Array<string> = [];
     const l = logger.child({function:"heartbeat"});
 
-    const slowHeartbeat = () => setTimeout(heartbeat, HEARTBEAT_SLOW_DELTA * 1000);
-    const fastHeartbeat = () => setTimeout(heartbeat, HEARTBEAT_FAST_DELTA * 1000);
+    function slowHeartbeat() {
+        setTimeout(heartbeat, HEARTBEAT_SLOW_DELTA * 1000);
+        l.info({delta:HEARTBEAT_SLOW_DELTA}, "Next heartbeat scheduled");
+    }
+    
+    function fastHeartbeat() {
+        setTimeout(heartbeat, HEARTBEAT_FAST_DELTA * 1000)
+        l.info({delta:HEARTBEAT_FAST_DELTA}, "Next heartbeat scheduled");
+    }
 
     const heartbeat = async () => {
         l.debug("Heartbeat.");
-        if (await isOnWifi()) {
-            // try {
-            //     filenamesInCloud = await loadFilenamesInCloud();
-            // } catch (err) {
-            //     l.warn({err}, "Could not read files in cloud folder.");
-            // }
+        // try {
+        //     filenamesInCloud = await loadFilenamesInCloud();
+        // } catch (err) {
+        //     l.warn({err}, "Could not read files in cloud folder.");
+        // }
 
-            if (currentVideo) {
-                // upload video file to cloud
+        if (currentVideo) {
+            // upload video file to cloud
+            try {
+                if (!isVideoUploaded) {
+                    l.debug({video:currentVideo}, "Uploading video.");
+                    await uploadVideoToCloud(currentVideo);
+                    isVideoUploaded = true;
+                    l.info({video:currentVideo}, "Uploaded video.");
+                }
+
                 try {
-                    if (!isVideoUploaded) {
-                        l.debug({video:currentVideo}, "Uploading video.");
-                        await uploadVideoToCloud(currentVideo);
-                        isVideoUploaded = true;
-                        l.info({video:currentVideo}, "Uploaded video.");
-                    }
-
-                    try {
-                        l.debug({video:currentVideo}, "Deleting video from camera.");
-                        await deleteVideoFromCamera(currentVideo);
-                        currentVideo = null;
-                        isVideoUploaded = false;
-                        l.info({video:currentVideo}, "Deleted video from camera.");
-                    } catch (err) {
-                        l.error({err}, "Could not delete video from camera.");
-                    }
+                    l.debug({video:currentVideo}, "Deleting video from camera.");
+                    await deleteVideoFromCamera(currentVideo);
+                    currentVideo = null;
+                    isVideoUploaded = false;
+                    l.info({video:currentVideo}, "Deleted video from camera.");
                 } catch (err) {
-                    l.error({err}, "Could not upload video to cloud folder.");
+                    l.error({err}, "Could not delete video from camera.");
                 }
 
                 fastHeartbeat();
                 return;
-            } else {
-                // check camera for a video file
-                try {
-                    l.debug("Downloading video from camera.");
-                    currentVideo = await downloadVideoFromCamera();
-                    if (currentVideo) {
-                        l.info({video:currentVideo}, "Downloaded video from camera.");
-                        fastHeartbeat();
-                        return;
-                    } else {
-                        // if no video file is found, wait and try again
-                        l.info("No video found on camera.");
-                    }
-                } catch (err) {
-                    l.error({err}, "Could not download video from camera.");
-                }
-
+            } catch (err) {
+                l.error({err}, "Could not upload video to cloud folder.");
                 slowHeartbeat();
                 return;
             }
+        } else {
+            // check camera for a video file
+            try {
+                l.debug("Downloading video from camera.");
+                currentVideo = await downloadVideoFromCamera();
+                if (currentVideo) {
+                    l.info({video:currentVideo}, "Downloaded video from camera.");
+                    fastHeartbeat();
+                    return;
+                } else {
+                    // if no video file is found, wait and try again
+                    l.info("No video found on camera.");
+                }
+            } catch (err) {
+                l.error({err}, "Could not download video from camera.");
+            }
+
+            slowHeartbeat();
+            return;
         }
     }
 
@@ -119,8 +125,6 @@ async function downloadVideoFromCamera() {
                 blob: videoContent.blob,
                 cameraPath: camVideo.path
             }
-
-            l.info({video}, "Downloaded video.");
             return video;
         } else {
             return null;
@@ -135,7 +139,6 @@ async function deleteVideoFromCamera(video:VideoFile) {
     if (video) {
         await getCamera(CAMERA_SSID!).connect(async c => {
             await c.deleteVideo(video.cameraPath);
-            l.info({video}, "Deleted video from camera.");
         });
     }
 }
@@ -146,16 +149,4 @@ async function loadFilenamesInCloud() {
 
 async function uploadVideoToCloud(video:VideoFile) {
     await googleDrive.getFolder(GOOGLE_DRIVE_FOLDER_ID).upload(video, video.blob);
-}
-
-async function isConnectedToCamera():Promise<boolean> {
-    const network = await currentNetwork();
-    return !!network && network.ssid == CAMERA_SSID;
-}
-
-async function isOnWifi() {
-    const l = logger.child({function:isOnWifi.name});
-    const network = await currentNetwork();
-    l.info({ssid:network?.ssid}, "Wifi status.");
-    return network != null;
 }

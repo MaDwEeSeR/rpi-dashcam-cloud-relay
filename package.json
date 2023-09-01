@@ -1,15 +1,16 @@
 {
   "name": "rpi-dashcam-cloud-relay",
   "version": "1.0.0",
-  "description": "",
+  "description": "Dascham Cloud Relay",
   "engines": {
     "node": ">=0.10.3 <=16.3.0"
   },
-  "main": "index.js",
+  "main": "build/index.js",
+  "type": "module",
   "scripts": {
     "build": "rm -rf ./build && npx tsc",
-    "debug": "NODE_ENV=development node --no-expose-wasm ./dist/index.js",
-    "start": "NODE_ENV=production node --no-expose-wasm ./dist/index.js",
+    "debug": "NODE_ENV=development node --no-expose-wasm ./build/index.js",
+    "start": "NODE_ENV=production node --no-expose-wasm ./build/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -29,9 +30,10 @@
   },
   "homepage": "https://github.com/Qvazar/rpi-dashcam-cloud-relay#readme",
   "devDependencies": {
+    "@tsconfig/node16": "^16.1.1",
     "@types/async": "^3.2.20",
     "@types/bunyan": "^1.8.8",
-    "@types/node": "^20.5.6",
+    "@types/node": "^20.5.7",
     "@types/node-fetch": "^2.6.4",
     "typescript": "^5.2.2"
   },
@@ -41,7 +43,7 @@
     "async": "^3.2.4",
     "bunyan": "^1.8.15",
     "moment": "^2.29.4",
-    "node-fetch": "^2.7.0",
+    "node-fetch": "^3.3.2",
     "node-html-parser": "^6.1.6",
     "rpi-fi": "^1.1.0"
   }

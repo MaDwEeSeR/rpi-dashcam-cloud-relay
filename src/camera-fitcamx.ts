@@ -3,7 +3,7 @@ import { map } from "async";
 import { basename } from "path";
 import fetch, { Response } from "node-fetch";
 import { parse } from 'node-html-parser';
-import { connectKnownNetwork, disconnect } from "./wifi";
+import { connectKnownNetwork, disconnect, scan } from "./wifi.js";
 import moment, { Moment } from "moment";
 
 export function getCamera(ssid:string) {
@@ -24,6 +24,11 @@ class FitcamxCamera {
     }
 
     async connect<R>(cameraControl: (camera:FitcamxCameraController) => Promise<R>) {
+        const canSeeCamera = (await scan()).some(n => n.ssid == this.ssid);
+        if (!canSeeCamera) {
+            throw new Error("Cannot see camera WiFi. Not in range?");
+        }
+        
         await connectKnownNetwork(this.ssid);
         try {
             return await cameraControl(new FitcamxCameraController(this));

@@ -1,4 +1,6 @@
-import { Network, disconnect, list_networks, selectNetwork, state } from 'rpi-fi';
+import { Network, disconnect, list_networks, selectNetwork, scan, state } from 'rpi-fi';
+
+export { scan, disconnect };
 
 /**
  * Connect to a network pre-configured in wpa_supplicant.conf
@@ -16,8 +18,6 @@ export async function connectKnownNetwork(ssid:string) {
         throw new WifiError(`Network with SSID '${ssid}' is not configured.`);
     }
 }
-
-export { disconnect };
 
 export async function currentNetwork() : Promise<Network|null>{
     let st = await state();
