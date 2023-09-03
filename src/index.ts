@@ -71,7 +71,7 @@ if (isEmpty(CAMERA_SSID)) {
         } else {
             // check camera for a video file
             try {
-                l.info("Attpemting download of video from camera.");
+                l.info("Attempting download of video from camera.");
                 currentVideo = await downloadVideoFromCamera();
                 if (currentVideo) {
                     l.info({video:currentVideo}, "Downloaded video from camera.");
