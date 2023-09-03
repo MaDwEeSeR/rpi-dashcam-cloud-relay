@@ -45,14 +45,14 @@ if (isEmpty(CAMERA_SSID)) {
             // upload video file to cloud
             try {
                 if (!isVideoUploaded) {
-                    l.debug({video:currentVideo}, "Uploading video.");
+                    l.info({video:currentVideo}, "Attempting upload of video to cloud.");
                     await uploadVideoToCloud(currentVideo);
                     isVideoUploaded = true;
-                    l.info({video:currentVideo}, "Uploaded video.");
+                    l.info({video:currentVideo}, "Uploaded video to cloud.");
                 }
 
                 try {
-                    l.debug({video:currentVideo}, "Deleting video from camera.");
+                    l.info({video:currentVideo}, "Deleting video from camera.");
                     await deleteVideoFromCamera(currentVideo);
                     currentVideo = null;
                     isVideoUploaded = false;
@@ -64,14 +64,14 @@ if (isEmpty(CAMERA_SSID)) {
                 fastHeartbeat();
                 return;
             } catch (err) {
-                l.error({err}, "Could not upload video to cloud folder.");
+                l.error({err}, "Could not upload video to cloud.");
                 slowHeartbeat();
                 return;
             }
         } else {
             // check camera for a video file
             try {
-                l.debug("Downloading video from camera.");
+                l.info("Attpemting download of video from camera.");
                 currentVideo = await downloadVideoFromCamera();
                 if (currentVideo) {
                     l.info({video:currentVideo}, "Downloaded video from camera.");
