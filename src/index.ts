@@ -58,13 +58,13 @@ if (isEmpty(CAMERA_SSID)) {
                     isVideoUploaded = false;
                     l.info({video:currentVideo}, "Deleted video from camera.");
                 } catch (err) {
-                    l.error({err}, "Could not delete video from camera.");
+                    l.error({err}, `Could not delete video from camera: ${(err as Error).message}`);
                 }
 
                 fastHeartbeat();
                 return;
             } catch (err) {
-                l.error({err}, "Could not upload video to cloud.");
+                l.error({err}, `Could not upload video to cloud: ${(err as Error).message}`);
                 slowHeartbeat();
                 return;
             }
@@ -82,7 +82,7 @@ if (isEmpty(CAMERA_SSID)) {
                     l.info("No video found on camera.");
                 }
             } catch (err) {
-                l.error({err}, "Could not download video from camera.");
+                l.error({err}, `Could not download video from camera: ${(err as Error).message}`);
             }
 
             slowHeartbeat();
