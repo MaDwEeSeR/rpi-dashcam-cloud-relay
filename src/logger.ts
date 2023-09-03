@@ -20,3 +20,7 @@ export const logger = bunyan.createLogger({
         { type: 'rotating-file', path: '/var/log/fitcamx-gdrive-relay.log', period: '1d', count: 7, level: "debug" }
     ],
 });
+
+if (process.env.NODE_ENV == "development") {
+    logger.level(bunyan.DEBUG);
+}
