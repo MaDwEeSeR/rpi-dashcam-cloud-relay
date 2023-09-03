@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Blob } from 'buffer';
 import { Moment } from "moment";
 import { googleDrive } from "./google-drive.js";
