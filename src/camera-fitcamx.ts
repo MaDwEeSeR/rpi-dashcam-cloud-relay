@@ -5,6 +5,7 @@ import fetch, { Response } from "node-fetch";
 import { parse } from 'node-html-parser';
 import { connectKnownNetwork, disconnect, scan } from "./wifi.js";
 import moment, { Moment } from "moment";
+import { retry, stringCompare } from './util.js';
 
 export function getCamera(ssid:string) {
     return new FitcamxCamera(ssid);
@@ -29,11 +30,12 @@ class FitcamxCamera {
             throw new Error("Cannot see camera WiFi. Not in range?");
         }
         
-        await connectKnownNetwork(this.ssid);
+        await retry(() => connectKnownNetwork(this.ssid));
         try {
             return await cameraControl(new FitcamxCameraController(this));
         } finally {
             await disconnect();
+            await scan();
         }
     }
 }
@@ -50,7 +52,7 @@ class FitcamxCameraController {
 
     async listLockedVideos() {
         const files:Array<FitcamxFile> = (await map(LOCKED_VIDEO_FOLDERS, async (folder:string) => {
-            const res = checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`));
+            const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`)));
             const html = parse(await res.text());
             const videoFiles = html.querySelectorAll("tr > td:first-child > a")
                 .map(e => {
@@ -61,7 +63,7 @@ class FitcamxCameraController {
                     return new FitcamxFile(path);
                 });
             return videoFiles;
-        })).flat();
+        })).flat().sort((a, b) => stringCompare(a.name, b.name));;
 
         return files;
     }
@@ -89,7 +91,7 @@ class FitcamxFile {
 
     async getContent() {
         if (!this._content) {
-            const res = checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`));
+            const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`)));
             this._content = {
                 blob: (await res.blob()) as Blob,
                 mimetype: res.headers.get('Content-Type') ?? "application/octet-stream"
@@ -100,7 +102,7 @@ class FitcamxFile {
     }
 
     async delete() {
-        checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}?del=1`), 404);
+        await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}?del=1`), 404));
     }
 }
 

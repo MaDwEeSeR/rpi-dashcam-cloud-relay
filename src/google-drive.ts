@@ -3,6 +3,7 @@ import { auth as g_auth } from "@googleapis/oauth2";
 import { drive_v3, drive as g_drive } from "@googleapis/drive";
 import moment, { Moment } from "moment";
 import { GaxiosResponse } from "gaxios";
+import { retry } from './util.js';
 
 // const VIDEO_MIMETYPE = "video/mp2t";
 
@@ -35,7 +36,7 @@ export class GoogleDriveFolder {
     }
 
     async upload(file: GoogleDriveFileMeta, blob: Blob) {
-        checkStatus(await drive.files.create({
+        await retry(async () => checkStatus(await drive.files.create({
             requestBody: {
                 name: file.name,
                 mimeType: file.mimetype,
@@ -46,7 +47,7 @@ export class GoogleDriveFolder {
                 mimeType: file.mimetype || undefined,
                 body: blob
             }
-        }));
+        })));
     }
 
     async list() {
@@ -54,11 +55,13 @@ export class GoogleDriveFolder {
         let nextPageToken:string|null|undefined = undefined;
 
         do {
-            let res:GaxiosResponse<drive_v3.Schema$FileList> = checkStatus(await drive.files.list({
-                q: this._parentFolderId ? `'${this._parentFolderId}' in parents` : undefined,
-                fields: 'files(name,mimeType,createdTime)',
-                pageToken: nextPageToken
-            }));
+            let res = await retry(async () => {
+                return checkStatus(await drive.files.list({
+                    q: (this._parentFolderId ? `'${this._parentFolderId}' in parents` : undefined),
+                    fields: 'files(name,mimeType,createdTime)',
+                    pageToken: nextPageToken
+                } as drive_v3.Params$Resource$Files$List));
+            });
 
             if (res.data.files) {
                 files.push(...res.data.files.map<GoogleDriveFileMeta>(f => ({
@@ -86,7 +89,7 @@ class GoogleDriveResponseError<T> extends Error {
 	}
 }
 
-function checkStatus<T>(response : GaxiosResponse<T>) {
+function checkStatus<T>(response : GaxiosResponse<T>) : GaxiosResponse<T> {
 	if (response.status >= 200 && response.status < 300) {
 		return response;
 	} else {

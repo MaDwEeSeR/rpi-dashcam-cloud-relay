@@ -109,8 +109,6 @@ async function downloadVideoFromCamera() {
         l.debug("Calling camera.listLockedVideos.");
         let potentialVideos = await c.listLockedVideos();
 
-        potentialVideos = potentialVideos.sort((a, b) => stringCompare(a.name, b.name));
-
         l.info({lockedVideos:potentialVideos}, "Got list of locked videos from camera.");
 
         //potentialVideos = potentialVideos.filter(f => !_filenamesInCloud.includes(f.name));

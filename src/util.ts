@@ -1,3 +1,5 @@
+import { retry as _retry } from 'async';
+
 interface HasLength {
     length:number
 }
@@ -28,4 +30,9 @@ export function stringCompare(a:string|null|undefined, b:string|null|undefined) 
 
 export async function sleep(ms:number) {
     return new Promise<void>(resolve => setTimeout(resolve, ms));
+}
+
+type RetryTask<T> = { (): Promise<T> };
+export function retry<T>(task:RetryTask<T>) : Promise<T> {
+    return _retry<T>({ times:10, interval: 1000 }, task);
 }
