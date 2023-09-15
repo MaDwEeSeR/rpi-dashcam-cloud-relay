@@ -8,8 +8,8 @@ import { getCamera } from "./camera-fitcamx.js";
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
-const HEARTBEAT_SLOW_DELTA = 3600;
-const HEARTBEAT_FAST_DELTA = 30;
+const HEARTBEAT_SLOW_DELTA = 600;
+const HEARTBEAT_FAST_DELTA = 10;
 
 if (isEmpty(CAMERA_SSID)) {
     logger.error("CAMERA_SSID not set.")
