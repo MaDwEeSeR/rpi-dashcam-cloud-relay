@@ -16,7 +16,7 @@ export const logger = bunyan.createLogger({
     },
     streams: [
         // Log to the console at 'info' and above
-        {stream: process.stdout, level: 'info'},
+        {stream: process.stdout, level: 'debug'},
         // { type: 'rotating-file', path: '/var/log/rpi-dashcam-cloud-relay.log', period: '1d', count: 7, level: "debug" }
     ],
 });
