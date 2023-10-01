@@ -6,8 +6,12 @@ import { parse } from 'node-html-parser';
 import { connectKnownNetwork, disconnect, scan } from "./wifi.js";
 import moment, { Moment } from "moment";
 import { retry, stringCompare } from './util.js';
+import { logger as parentLogger } from "./logger.js";
+
+const logger = parentLogger.child({module:'camera-fitcamx'});
 
 export function getCamera(ssid:string) {
+    logger.debug({function:getCamera.name}, "Entered function.");
     return new FitcamxCamera(ssid);
 }
 
@@ -25,13 +29,19 @@ class FitcamxCamera {
     }
 
     async connect<R>(cameraControl: (camera:FitcamxCameraController) => Promise<R>) {
+        const l = logger.child({function:this.connect.name});
+        l.debug("Entered function.");
+
+        l.debug("Scanning for camera WiFi.");
         const canSeeCamera = (await scan()).some(n => n.ssid == this.ssid);
         if (!canSeeCamera) {
             throw new Error("Cannot see camera WiFi. Not in range?");
         }
         
+        l.debug("Camera WiFi found. Trying to connect.");
         await retry(() => connectKnownNetwork(this.ssid));
         try {
+            l.debug("Connected to camera WiFi.");
             return await cameraControl(new FitcamxCameraController(this));
         } finally {
             await disconnect();
@@ -51,6 +61,9 @@ class FitcamxCameraController {
     }
 
     async listLockedVideos() {
+        const l = logger.child({function:this.listLockedVideos.name});
+        l.debug("Entered function.");
+
         const files:Array<FitcamxFile> = (await map(LOCKED_VIDEO_FOLDERS, async (folder:string) => {
             const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`)));
             const html = parse(await res.text());
@@ -63,12 +76,15 @@ class FitcamxCameraController {
                     return new FitcamxFile(path);
                 });
             return videoFiles;
-        })).flat().sort((a, b) => stringCompare(a.name, b.name));;
+        })).flat().sort((a, b) => stringCompare(a.name, b.name));
 
         return files;
     }
 
     async deleteVideo(path:string) {
+        const l = logger.child({function:this.deleteVideo.name});
+        l.debug("Entered function.");
+
         const file = new FitcamxFile(path);
         return file.delete();
     }
@@ -126,4 +142,4 @@ function checkStatus(response : Response, ...additionalAllowed:number[]) {
 	} else {
 		throw new FitcamxResponseError(response);
 	}
-};
+}

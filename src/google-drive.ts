@@ -95,4 +95,4 @@ function checkStatus<T>(response : GaxiosResponse<T>) : GaxiosResponse<T> {
 	} else {
 		throw new GoogleDriveResponseError(response);
 	}
-};
+}
