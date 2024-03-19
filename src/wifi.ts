@@ -1,4 +1,7 @@
 import { Network, disconnect, list_networks, selectNetwork, scan, state } from 'rpi-fi';
+import { logger as parentLogger } from "./logger.js";
+
+const logger = parentLogger.child({module:'wifi'});
 
 export { scan, disconnect };
 
@@ -7,9 +10,17 @@ export { scan, disconnect };
  * @param ssid 
  */
 export async function connectKnownNetwork(ssid:string) {
+    const l = logger.child({function:connectKnownNetwork.name});
+    l.debug("Entered function.");
+
+    l.debug("Scanning networks...");
     let networks = await list_networks();
+    l.debug("Found networks", {networks});
+
     let network = networks.find(n => n.ssid == ssid);
+
     if (network) {
+        l.debug("Found requested network. Connecting...", {network});
         let ok = await selectNetwork(network.id);
         if (!ok) {
             throw new WifiConnectionError(ssid);
