@@ -3,7 +3,7 @@ import { map } from "async";
 import { basename } from "path";
 import fetch, { Response } from "node-fetch";
 import { parse } from 'node-html-parser';
-import { connectKnownNetwork, disconnect, scan } from "./wifi.js";
+import { connectKnownNetwork } from "./wifi.js";
 import moment, { Moment } from "moment";
 import { retry, stringCompare } from './util.js';
 import { logger as parentLogger } from "./logger.js";
@@ -32,20 +32,12 @@ class FitcamxCamera {
         const l = logger.child({function:this.connect.name});
         l.debug("Entered function.");
 
-        l.debug("Scanning for camera WiFi.");
-        const canSeeCamera = (await scan()).some(n => n.ssid == this.ssid);
-        if (!canSeeCamera) {
-            throw new Error("Cannot see camera WiFi. Not in range?");
-        }
-        
-        l.debug("Camera WiFi found. Trying to connect.");
         await retry(() => connectKnownNetwork(this.ssid));
         try {
             l.debug("Connected to camera WiFi.");
             return await cameraControl(new FitcamxCameraController(this));
         } finally {
-            await disconnect();
-            await scan();
+            await connectKnownNetwork();
         }
     }
 }
