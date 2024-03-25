@@ -25,13 +25,14 @@ export interface WifiState {
 type WifiConnectedEventListener = (wifiState:WifiState) => void;
 type WifiDisconnectedEventListener = () => void;
 
-export type WifiController = (
+export type WifiController = {
     connect:typeof connectKnownNetwork,
     onConnect:(l:WifiConnectedEventListener) => void,
-    onDisconnect:(l:WifiDisconnectedEventListener) => void
-) => Promise<void>;
+    onDisconnect:(l:WifiDisconnectedEventListener) => void,
+    close:()=>void
+ };
 
-export async function useWifi(ctrl:WifiController) {
+export async function useWifi(user:(ctrl:WifiController)=>void) {
     const l = logger.child({function:useWifi.name});
     l.debug("enter");
     const wifiProcess = await spawnWifiProcess();
@@ -53,15 +54,12 @@ export async function useWifi(ctrl:WifiController) {
         }
     });
 
-    try {
-        await ctrl(
-            connectKnownNetwork,
-            (l) => events.on("WIFI_CONNECT", l),
-            (l) => events.on("WIFI_DISCONNECT", l)
-        );
-    } finally {
-        wifiProcess.kill();
-    }
+    user({
+        connect: connectKnownNetwork,
+        onConnect: (l) => events.on("WIFI_CONNECT", l),
+        onDisconnect: (l) => events.on("WIFI_DISCONNECT", l),
+        close: () => wifiProcess.kill()
+    });
 }
 
 class WifiError extends Error {

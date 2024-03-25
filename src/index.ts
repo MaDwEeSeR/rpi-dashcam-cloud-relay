@@ -25,8 +25,8 @@ if (isEmpty(CAMERA_SSID)) {
     let heartbeatTimeout:NodeJS.Timeout|null = null;
     // let filenamesInCloud:Array<string> = [];
 
-    await useWifi(async (connectWifi, onConnect, onDisconnect) => {
-        onConnect(ws => {
+    await useWifi(async (wifi) => {
+        wifi.onConnect(ws => {
             if (heartbeatTimeout) {
                 clearTimeout(heartbeatTimeout);
             }
@@ -38,12 +38,12 @@ if (isEmpty(CAMERA_SSID)) {
             }
         });
 
-        onDisconnect(() => {
+        wifi.onDisconnect(() => {
 
         });
 
-        const connectCamera = () => connectWifi(CAMERA_SSID);
-        const connectInternet = connectWifi;
+        const connectCamera = () => wifi.connect(CAMERA_SSID);
+        const connectInternet = () => wifi.connect();
 
         async function onConnectedToCamera() {
             if (currentVideo) {
