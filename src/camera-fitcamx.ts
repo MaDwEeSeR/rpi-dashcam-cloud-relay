@@ -3,53 +3,22 @@ import { map } from "async";
 import { basename } from "path";
 import fetch, { Response } from "node-fetch";
 import { parse } from 'node-html-parser';
-import { connectKnownNetwork } from "./wifi.js";
 import moment, { Moment } from "moment";
 import { retry, stringCompare } from './util.js';
 import { logger as parentLogger } from "./logger.js";
 
 const logger = parentLogger.child({module:'camera-fitcamx'});
 
-export function getCamera(ssid:string) {
-    logger.debug({function:getCamera.name}, "Entered function.");
-    return new FitcamxCamera(ssid);
+export async function useCamera<R>(ctrl:(camera:FitcamxCameraController)=>Promise<R>) {
+    logger.debug({function:useCamera.name}, "enter");
+    return await ctrl(new FitcamxCameraController());
 }
 
 const CAMERA_IPADDRESS = "192.168.1.254";
 const LOCKED_VIDEO_FOLDERS = ["/CARDV/EMR/", "/CARDV/EMR_E/"];
 
-class FitcamxCamera {
-    ssid: string
-
-    /**
-     *
-     */
-    constructor(ssid:string) {
-        this.ssid = ssid;
-    }
-
-    async connect<R>(cameraControl: (camera:FitcamxCameraController) => Promise<R>) {
-        const l = logger.child({function:this.connect.name});
-        l.debug("Entered function.");
-
-        await retry(() => connectKnownNetwork(this.ssid));
-        try {
-            l.debug("Connected to camera WiFi.");
-            return await cameraControl(new FitcamxCameraController(this));
-        } finally {
-            await connectKnownNetwork();
-        }
-    }
-}
-
 class FitcamxCameraController {
-    private _camera:FitcamxCamera
-
-    /**
-     *
-     */
-    constructor(camera:FitcamxCamera) {
-        this._camera = camera;
+    constructor() {
     }
 
     async listLockedVideos() {

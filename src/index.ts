@@ -2,9 +2,10 @@ import 'dotenv/config';
 import { Blob } from 'buffer';
 import { Moment } from "moment";
 import { googleDrive } from "./google-drive.js";
-import { isEmpty, sleep, stringCompare } from "./util.js";
+import { isEmpty, sleep, stringCompare, retry } from "./util.js";
 import { logger } from "./logger.js";
-import { getCamera } from "./camera-fitcamx.js";
+import { useWifi } from "./wifi.js";
+import { useCamera } from "./camera-fitcamx.js";
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
@@ -17,80 +18,80 @@ if (isEmpty(CAMERA_SSID)) {
 }
 
 // main
-(() => {
+(async () => {
+    const l = logger.child({function:"main"});
     let currentVideo:VideoFile|null|undefined = null;
     let isVideoUploaded = false;
+    let heartbeatTimeout:NodeJS.Timeout|null = null;
     // let filenamesInCloud:Array<string> = [];
-    const l = logger.child({function:"heartbeat"});
 
-    function slowHeartbeat() {
-        setTimeout(heartbeat, HEARTBEAT_SLOW_DELTA * 1000);
-        l.info({delta:HEARTBEAT_SLOW_DELTA}, "Next heartbeat scheduled");
-    }
-    
-    function fastHeartbeat() {
-        setTimeout(heartbeat, HEARTBEAT_FAST_DELTA * 1000)
-        l.info({delta:HEARTBEAT_FAST_DELTA}, "Next heartbeat scheduled");
-    }
-
-    const heartbeat = async () => {
-        l.debug("Heartbeat.");
-        // try {
-        //     filenamesInCloud = await loadFilenamesInCloud();
-        // } catch (err) {
-        //     l.warn({err}, "Could not read files in cloud folder.");
-        // }
-
-        if (currentVideo) {
-            // upload video file to cloud
-            try {
-                if (!isVideoUploaded) {
-                    l.info({video:currentVideo}, "Attempting upload of video to cloud.");
-                    await uploadVideoToCloud(currentVideo);
-                    isVideoUploaded = true;
-                    l.info({video:currentVideo}, "Uploaded video to cloud.");
-                }
-
-                try {
-                    l.info({video:currentVideo}, "Deleting video from camera.");
-                    await deleteVideoFromCamera(currentVideo);
-                    currentVideo = null;
-                    isVideoUploaded = false;
-                    l.info({video:currentVideo}, "Deleted video from camera.");
-                } catch (err) {
-                    l.error({err}, `Could not delete video from camera: ${(err as Error).message}`);
-                }
-
-                fastHeartbeat();
-                return;
-            } catch (err) {
-                l.error({err}, `Could not upload video to cloud: ${(err as Error).message}`);
-                slowHeartbeat();
-                return;
+    await useWifi(async (connectWifi, onConnect, onDisconnect) => {
+        onConnect(ws => {
+            if (heartbeatTimeout) {
+                clearTimeout(heartbeatTimeout);
             }
-        } else {
-            // check camera for a video file
-            try {
-                l.info("Attempting download of video from camera.");
-                currentVideo = await downloadVideoFromCamera();
-                if (currentVideo) {
-                    l.info({video:currentVideo}, "Downloaded video from camera.");
-                    fastHeartbeat();
-                    return;
+
+            if (ws.ssid == CAMERA_SSID) {
+                onConnectedToCamera();
+            } else {
+                onConnectedToInternet();
+            }
+        });
+
+        onDisconnect(() => {
+
+        });
+
+        const connectCamera = () => connectWifi(CAMERA_SSID);
+        const connectInternet = connectWifi;
+
+        async function onConnectedToCamera() {
+            if (currentVideo) {
+                if (isVideoUploaded) {
+                    try {
+                        await deleteVideoFromCamera(currentVideo);
+                        isVideoUploaded = false;
+                        currentVideo = null;
+                    } catch (err) {
+                        l.warn({err}, `Could not delete video from camera: ${(err as Error).message}`);
+                    }
                 } else {
-                    // if no video file is found, wait and try again
-                    l.info("No video found on camera.");
+                    await connectInternet();
+                    return;
                 }
-            } catch (err) {
-                l.error({err}, `Could not download video from camera: ${(err as Error).message}`);
             }
 
-            slowHeartbeat();
-            return;
-        }
-    }
+            try {
+                currentVideo = await downloadVideoFromCamera();
+            } catch (err) {
+                l.warn({err}, `Could not download video from camera: ${(err as Error).message}`);
+            } finally {
+                if (currentVideo) {
+                    await connectInternet();
+                } else {
+                    heartbeatTimeout = setTimeout(onConnectedToCamera, HEARTBEAT_SLOW_DELTA*1000);
+                }
+            }
+        };
 
-    heartbeat();
+        async function onConnectedToInternet() {
+            if (!currentVideo) {
+                await connectCamera();
+                return;
+            }
+
+            try {
+                await uploadVideoToCloud(currentVideo);
+                isVideoUploaded = true;
+                await connectCamera();
+            } catch (err) {
+                heartbeatTimeout = setTimeout(onConnectedToInternet, HEARTBEAT_SLOW_DELTA*1000);
+                l.error({err}, `Could not upload video to cloud: ${(err as Error).message}`);
+            }
+        }
+
+        await connectCamera();
+    });
 })();
 
 interface VideoFile {
@@ -105,7 +106,7 @@ async function downloadVideoFromCamera() {
     let l = logger.child({function:downloadVideoFromCamera.name});
     l.debug("Entered function.");
 
-    return await getCamera(CAMERA_SSID!).connect(async c => {
+    return await useCamera(async c => {
         l.debug("Calling camera.listLockedVideos.");
         let potentialVideos = await c.listLockedVideos();
 
@@ -136,7 +137,7 @@ async function deleteVideoFromCamera(video:VideoFile) {
     l.debug("Entered function.");
 
     if (video) {
-        await getCamera(CAMERA_SSID!).connect(async c => {
+        await useCamera(async c => {
             await c.deleteVideo(video.cameraPath);
         });
     }

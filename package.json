@@ -45,7 +45,6 @@
     "dotenv": "^16.3.1",
     "moment": "^2.29.4",
     "node-fetch": "^3.3.2",
-    "node-html-parser": "^6.1.6",
-    "rpi-fi": "^1.1.0"
+    "node-html-parser": "^6.1.6"
   }
 }
