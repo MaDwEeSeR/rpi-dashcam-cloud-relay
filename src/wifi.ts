@@ -42,13 +42,13 @@ export async function useWifi(user:(ctrl:WifiController)=>void) {
 
     const wifiProcess = await spawnWifiProcess();
     const events = new EventEmitter();
-    const wifiEventMatch = /^<(\d)>((?:[A-Z]|-){2,})/;
+    const wifiEventRegex = /<(\d)>((?:[A-Z]|-){2,})/g;
 
     wifiProcess.stdout.on("data", async (data:Buffer) => {
-        const event = data.toString();
-        l.trace({event}, "wpa_cli event");
-        const m = wifiEventMatch.exec(event);
-        if (m) {
+        const dataString = data.toString();
+        l.trace({dataString}, "wpa_cli event");
+
+        for (let m of dataString.matchAll(wifiEventRegex)) {
             l.debug({match:m}, "wpa_cli event match");
             switch (m[2]) {
                 case "CTRL-EVENT-CONNECTED":
@@ -160,7 +160,7 @@ async function wpacli_list_networks(iface = IFACE) {
             id: parseInt(params[0]),
             ssid: params[1],
             bssid: params[2],
-            state: params[3].replace(/[\[\]']+/g,'')
+            state: params[3]?.replace(/[\[\]']+/g,'')
         });
     });
 
