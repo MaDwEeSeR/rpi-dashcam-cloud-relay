@@ -23,11 +23,12 @@ class FitcamxCameraController {
 
     async listLockedVideos() {
         const l = logger.child({function:this.listLockedVideos.name});
-        l.debug("Entered function.");
+        l.trace("enter");
 
         const files:Array<FitcamxFile> = (await map(LOCKED_VIDEO_FOLDERS, async (folder:string) => {
             const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`)));
             const html = parse(await res.text());
+            l.debug({html}, "fetched html from camera");
             const videoFiles = html.querySelectorAll("tr > td:first-child > a")
                 .map(e => {
                     const path = e.getAttribute("href");
@@ -39,6 +40,7 @@ class FitcamxCameraController {
             return videoFiles;
         })).flat().sort((a, b) => stringCompare(a.name, b.name));
 
+        l.debug({files}, "return");
         return files;
     }
 

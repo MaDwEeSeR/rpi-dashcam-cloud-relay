@@ -104,18 +104,16 @@ interface VideoFile {
 
 async function downloadVideoFromCamera() {
     let l = logger.child({function:downloadVideoFromCamera.name});
-    l.debug("Entered function.");
+    l.trace("enter");
 
     return await useCamera(async c => {
-        l.debug("Calling camera.listLockedVideos.");
+        l.trace("Calling camera.listLockedVideos.");
         let potentialVideos = await c.listLockedVideos();
-
-        l.info({lockedVideos:potentialVideos}, "Got list of locked videos from camera.");
 
         //potentialVideos = potentialVideos.filter(f => !_filenamesInCloud.includes(f.name));
         //l.debug({lockedVideos:potentialVideos}, "Filtered out filenamesInCloud.");
 
-        let camVideo = potentialVideos.at(0);
+        let camVideo = potentialVideos[0];
         if (camVideo) {
             let videoContent = await camVideo.getContent();
             let video:VideoFile = {
