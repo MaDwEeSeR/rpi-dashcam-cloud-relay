@@ -44,7 +44,8 @@ export async function useWifi(user:(ctrl:WifiController)=>void) {
     const events = new EventEmitter();
     const wifiEventMatch = /^<(\d)>((?:[A-Z]|-){2,})/;
 
-    wifiProcess.stdout.on("data", async (event) => {
+    wifiProcess.stdout.on("data", async (data:Buffer) => {
+        const event = data.toString();
         l.trace({event}, "wpa_cli event");
         const m = wifiEventMatch.exec(event);
         if (m) {
@@ -143,9 +144,13 @@ async function connectKnownNetwork(ssid?:string) {
 interface Network { id:number, ssid:string, bssid:string, state:string }
 
 async function wpacli_list_networks(iface = IFACE) {
+    const l = logger.child({function:wpacli_list_networks.name});
+
     let networks:Network[] = [];
 
     const result = await wpacli_cmd(iface, 'list_networks');
+    l.debug({result}, "wpa_cli list_networks output");
+
     let output = result.split('\n');
     output.shift(); // remove header
 
