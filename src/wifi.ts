@@ -38,26 +38,26 @@ export type WifiController = {
 
 export async function useWifi(user:(ctrl:WifiController)=>void) {
     const l = logger.child({function:useWifi.name});
-    l.trace({msg:"enter"});
+    l.trace("enter");
 
     const wifiProcess = await spawnWifiProcess();
     const events = new EventEmitter();
     const wifiEventMatch = /^<(\d)>((?:[A-Z]|-){2,})/;
 
     wifiProcess.stdout.on("data", async (event) => {
-        l.trace({msg:"wpa_cli event", event});
+        l.trace({event}, "wpa_cli event");
         const m = wifiEventMatch.exec(event);
         if (m) {
-            l.debug({msg:"wpa_cli event match", match:m});
+            l.debug({match:m}, "wpa_cli event match");
             switch (m[2]) {
                 case "CTRL-EVENT-CONNECTED":
                     const s = await wpacli_status();
 
-                    l.debug({msg:"emit wifi event", event:WIFI_EVENT_CONNECTED, ssid:s.ssid});
+                    l.debug({event:WIFI_EVENT_CONNECTED, ssid:s.ssid}, "emit wifi event");
                     events.emit(WIFI_EVENT_CONNECTED, s);
                     break;
                 case "CTRL-EVENT-DISCONNECTED":
-                    l.debug({msg:"emit wifi event", event:WIFI_EVENT_DISCONNECTED});
+                    l.debug({event:WIFI_EVENT_DISCONNECTED}, "emit wifi event");
                     events.emit(WIFI_EVENT_DISCONNECTED);
                     break;
                 case "CTRL-EVENT-SCAN-RESULTS":
@@ -88,7 +88,7 @@ class WifiConnectionError extends WifiError {
 
 function spawnWifiProcess() {
     const l = logger.child({function:spawnWifiProcess.name});
-    l.trace({msg:"enter"});
+    l.trace("enter");
 
     return new Promise<ChildProcessWithoutNullStreams>((resolve, reject) => {
         const args = ["-i", IFACE];
@@ -113,17 +113,17 @@ function spawnWifiProcess() {
  */
 async function connectKnownNetwork(ssid?:string) {
     const l = logger.child({function:connectKnownNetwork.name});
-    l.debug({msg:"Entered function.", ssid:ssid});
+    l.debug({ssid:ssid}, "enter");
 
     if (ssid) {
         l.debug("list_networks");
         let networks = await wpacli_list_networks();
-        l.debug({msg:"list_networks result", networks});
+        l.debug({networks}, "list_networks result");
 
         let network = networks.find(n => n.ssid == ssid);
 
         if (network) {
-            l.debug({msg:"select_network", network});
+            l.debug({network}, "select_network");
             let ok = await wpacli_selectNetwork(network.id);
             if (!ok) {
                 throw new WifiConnectionError(ssid);
