@@ -22,5 +22,5 @@ export const logger = bunyan.createLogger({
 });
 
 if (process.env.NODE_ENV == "development") {
-    logger.level(bunyan.DEBUG);
+    logger.level(bunyan.TRACE);
 }

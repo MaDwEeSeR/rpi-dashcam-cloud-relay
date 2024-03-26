@@ -29,26 +29,38 @@ export type WifiController = {
     connect:typeof connectKnownNetwork,
     onConnect:(l:WifiConnectedEventListener) => void,
     onDisconnect:(l:WifiDisconnectedEventListener) => void,
-    close:()=>void
+    close:() => void
  };
+
+ const WIFI_EVENT_CONNECTED = "wifi_connect";
+ const WIFI_EVENT_DISCONNECTED = "wifi_disconnect";
+ const WIFI_EVENT_ERROR = "wifi_error";
 
 export async function useWifi(user:(ctrl:WifiController)=>void) {
     const l = logger.child({function:useWifi.name});
-    l.debug("enter");
+    l.trace({msg:"enter"});
+
     const wifiProcess = await spawnWifiProcess();
     const events = new EventEmitter();
     const wifiEventMatch = /^<(\d)>((?:[A-Z]|-){2,})/;
 
     wifiProcess.stdout.on("data", async (event) => {
+        l.trace({msg:"wpa_cli event", event});
         const m = wifiEventMatch.exec(event);
         if (m) {
+            l.debug({msg:"wpa_cli event match", match:m});
             switch (m[2]) {
                 case "CTRL-EVENT-CONNECTED":
                     const s = await wpacli_status();
-                    events.emit("WIFI_CONNECT", s);
+
+                    l.debug({msg:"emit wifi event", event:WIFI_EVENT_CONNECTED, ssid:s.ssid});
+                    events.emit(WIFI_EVENT_CONNECTED, s);
                     break;
                 case "CTRL-EVENT-DISCONNECTED":
-                    events.emit("WIFI_DISCONNECT");
+                    l.debug({msg:"emit wifi event", event:WIFI_EVENT_DISCONNECTED});
+                    events.emit(WIFI_EVENT_DISCONNECTED);
+                    break;
+                case "CTRL-EVENT-SCAN-RESULTS":
                     break;
             }
         }
@@ -56,8 +68,8 @@ export async function useWifi(user:(ctrl:WifiController)=>void) {
 
     user({
         connect: connectKnownNetwork,
-        onConnect: (l) => events.on("WIFI_CONNECT", l),
-        onDisconnect: (l) => events.on("WIFI_DISCONNECT", l),
+        onConnect: (l) => events.on(WIFI_EVENT_CONNECTED, l),
+        onDisconnect: (l) => events.on(WIFI_EVENT_DISCONNECTED, l),
         close: () => wifiProcess.kill()
     });
 }
@@ -76,7 +88,7 @@ class WifiConnectionError extends WifiError {
 
 function spawnWifiProcess() {
     const l = logger.child({function:spawnWifiProcess.name});
-    l.debug("enter");
+    l.trace({msg:"enter"});
 
     return new Promise<ChildProcessWithoutNullStreams>((resolve, reject) => {
         const args = ["-i", IFACE];
@@ -88,7 +100,8 @@ function spawnWifiProcess() {
 
         p.on("exit", (code) => {
             if (code) {
-                l.warn(`wpa_cli exited with code ${code}.`);
+                l.error(`wpa_cli exited with code ${code}.`);
+                process.exit(10);
             }
         });
     });
