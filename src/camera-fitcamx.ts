@@ -29,7 +29,7 @@ class FitcamxCameraController {
             const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`)));
             const html = parse(await res.text());
             l.debug({html:html.outerHTML}, "fetched html from camera");
-            const videoFiles = html.querySelectorAll("tr > td:first-child > a")
+            const videoFiles = html.querySelectorAll("a[href$=TS]") // select all links that end in TS
                 .map(e => {
                     const path = e.getAttribute("href");
                     if (!path) {
