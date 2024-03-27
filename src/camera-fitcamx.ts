@@ -28,7 +28,7 @@ class FitcamxCameraController {
         const files:Array<FitcamxFile> = (await map(LOCKED_VIDEO_FOLDERS, async (folder:string) => {
             const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`)));
             const html = parse(await res.text());
-            l.debug({html}, "fetched html from camera");
+            l.debug({html:html.outerHTML}, "fetched html from camera");
             const videoFiles = html.querySelectorAll("tr > td:first-child > a")
                 .map(e => {
                     const path = e.getAttribute("href");
