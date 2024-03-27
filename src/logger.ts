@@ -11,6 +11,7 @@ export const logger = bunyan.createLogger({
     // will contain "name": "my-service"
     name: 'rpi-dashcam-cloud-relay',
     serializers: {
+        err: bunyan.stdSerializers.err,
         network: (n:HasSsid) => n.ssid,
         blob: (b?:Blob) => b ? `${b.size} bytes` : b
     },
