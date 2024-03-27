@@ -54,11 +54,11 @@ export async function useWifi(user:(ctrl:WifiController)=>void) {
                 case "CTRL-EVENT-CONNECTED":
                     const s = await wpacli_status();
 
-                    l.debug({event:WIFI_EVENT_CONNECTED, ssid:s.ssid}, "emit wifi event");
+                    l.info({event:WIFI_EVENT_CONNECTED, ssid:s.ssid}, "wifi connected");
                     events.emit(WIFI_EVENT_CONNECTED, s);
                     break;
                 case "CTRL-EVENT-DISCONNECTED":
-                    l.debug({event:WIFI_EVENT_DISCONNECTED}, "emit wifi event");
+                    l.info({event:WIFI_EVENT_DISCONNECTED}, "wifi disconnected");
                     events.emit(WIFI_EVENT_DISCONNECTED);
                     break;
                 case "CTRL-EVENT-SCAN-RESULTS":
@@ -66,6 +66,8 @@ export async function useWifi(user:(ctrl:WifiController)=>void) {
             }
         }
     });
+
+    // TODO: Handle unexpected exit of child process
 
     user({
         connect: connectKnownNetwork,
@@ -101,8 +103,7 @@ function spawnWifiProcess() {
 
         p.on("exit", (code) => {
             if (code) {
-                l.error(`wpa_cli exited with code ${code}.`);
-                process.exit(10);
+                l.warn(`wpa_cli exited with code ${code}.`);
             }
         });
     });

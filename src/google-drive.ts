@@ -45,7 +45,7 @@ export class GoogleDriveFolder {
             },
             media: {
                 mimeType: file.mimetype || undefined,
-                body: blob
+                body: blob.stream()
             }
         })));
     }

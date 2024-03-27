@@ -53,7 +53,7 @@ if (isEmpty(CAMERA_SSID)) {
                         isVideoUploaded = false;
                         currentVideo = null;
                     } catch (err) {
-                        l.warn({err}, `Could not delete video from camera: ${(err as Error).message}`);
+                        l.error({err}, `Error when deleting video from camera.`);
                     }
                 } else {
                     await connectInternet();
@@ -64,7 +64,7 @@ if (isEmpty(CAMERA_SSID)) {
             try {
                 currentVideo = await downloadVideoFromCamera();
             } catch (err) {
-                l.warn({err}, `Could not download video from camera: ${(err as Error).message}`);
+                l.error({err}, `Error downloading video from camera.`);
             } finally {
                 if (currentVideo) {
                     await connectInternet();
@@ -86,7 +86,7 @@ if (isEmpty(CAMERA_SSID)) {
                 await connectCamera();
             } catch (err) {
                 heartbeatTimeout = setTimeout(onConnectedToInternet, HEARTBEAT_SLOW_DELTA*1000);
-                l.error({err}, `Could not upload video to cloud: ${(err as Error).message}`);
+                l.error({err}, `Error uploading video to cloud`);
             }
         }
 
@@ -123,6 +123,8 @@ async function downloadVideoFromCamera() {
                 blob: videoContent.blob,
                 cameraPath: camVideo.path
             }
+
+            l.trace({video}, "return");
             return video;
         } else {
             return null;
