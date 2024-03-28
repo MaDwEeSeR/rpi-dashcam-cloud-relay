@@ -39,7 +39,10 @@ if (isEmpty(CAMERA_SSID)) {
         });
 
         wifi.onDisconnect(() => {
-
+            if (heartbeatTimeout) {
+                clearTimeout(heartbeatTimeout);
+                heartbeatTimeout = null;
+            }
         });
 
         const connectCamera = () => wifi.connect(CAMERA_SSID);
@@ -50,6 +53,7 @@ if (isEmpty(CAMERA_SSID)) {
                 if (isVideoUploaded) {
                     try {
                         await deleteVideoFromCamera(currentVideo);
+                        l.info({video:currentVideo}, "video deleted from camera.");
                         isVideoUploaded = false;
                         currentVideo = null;
                     } catch (err) {
@@ -69,7 +73,7 @@ if (isEmpty(CAMERA_SSID)) {
                 if (currentVideo) {
                     await connectInternet();
                 } else {
-                    heartbeatTimeout = setTimeout(onConnectedToCamera, HEARTBEAT_SLOW_DELTA*1000);
+                    heartbeatTimeout = setTimeout(onConnectedToCamera, HEARTBEAT_FAST_DELTA*1000);
                 }
             }
         };
@@ -82,10 +86,11 @@ if (isEmpty(CAMERA_SSID)) {
 
             try {
                 await uploadVideoToCloud(currentVideo);
+                l.info({video:currentVideo}, "video uploaded.");
                 isVideoUploaded = true;
                 await connectCamera();
             } catch (err) {
-                heartbeatTimeout = setTimeout(onConnectedToInternet, HEARTBEAT_SLOW_DELTA*1000);
+                heartbeatTimeout = setTimeout(onConnectedToInternet, HEARTBEAT_FAST_DELTA*1000);
                 l.error({err}, `Error uploading video to cloud`);
             }
         }
@@ -134,7 +139,7 @@ async function downloadVideoFromCamera() {
 
 async function deleteVideoFromCamera(video:VideoFile) {
     let l = logger.child({function:deleteVideoFromCamera.name});
-    l.debug("Entered function.");
+    l.debug("enter");
 
     if (video) {
         await useCamera(async c => {

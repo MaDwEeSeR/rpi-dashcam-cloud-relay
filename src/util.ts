@@ -34,5 +34,5 @@ export async function sleep(ms:number) {
 
 type RetryTask<T> = { (): Promise<T> };
 export function retry<T>(task:RetryTask<T>) : Promise<T> {
-    return _retry<T>({ times:10, interval: 1000 }, task);
+    return _retry<T>({ times:10, interval: 5000 }, task);
 }
