@@ -1,4 +1,5 @@
 import { Blob } from 'buffer';
+import { Readable } from "stream";
 import { auth as g_auth } from "@googleapis/oauth2";
 import { drive_v3, drive as g_drive } from "@googleapis/drive";
 import moment, { Moment } from "moment";
@@ -45,7 +46,7 @@ export class GoogleDriveFolder {
             },
             media: {
                 mimeType: file.mimetype || undefined,
-                body: blob.stream()
+                body: Readable.from(blob.stream())
             }
         })));
     }
