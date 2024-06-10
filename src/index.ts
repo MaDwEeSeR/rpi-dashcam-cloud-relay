@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import { Blob } from 'buffer';
 import { Moment } from "moment";
-import { googleDrive } from "./google-drive.js";
-import { isEmpty, sleep, stringCompare, retry } from "./util.js";
-import { logger } from "./logger.js";
-import { useWifi } from "./wifi.js";
-import { useCamera } from "./camera-fitcamx.js";
+import { googleDrive } from "./lib/google-drive.js";
+import { isEmpty, sleep, stringCompare, retry } from "./lib/util.js";
+import { logger } from "./lib/logger.js";
+import { useWifi } from "./lib/wifi.js";
+import { useCamera } from "./lib/camera-fitcamx.js";
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
