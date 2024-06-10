@@ -29,7 +29,8 @@ export type WifiController = {
     connect:typeof connectKnownNetwork,
     onConnect:(l:WifiConnectedEventListener) => void,
     onDisconnect:(l:WifiDisconnectedEventListener) => void,
-    close:() => void
+    close:() => void,
+    currentSsid:() => Promise<string|null>
  };
 
  const WIFI_EVENT_CONNECTED = "wifi_connect";
@@ -53,7 +54,8 @@ export async function useWifi(user:(ctrl:WifiController)=>void) {
         connect: connectKnownNetwork,
         onConnect: (l) => eventEmitter.on(WIFI_EVENT_CONNECTED, l),
         onDisconnect: (l) => eventEmitter.on(WIFI_EVENT_DISCONNECTED, l),
-        close: () => wifiProcess.kill()
+        close: () => wifiProcess.kill(),
+        currentSsid: async () => (await wpacli_status())?.ssid
     });
 }
 
