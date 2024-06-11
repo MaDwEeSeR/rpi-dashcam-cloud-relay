@@ -71,7 +71,7 @@ async function downloadVideosFromCamera() {
         potentialVideos.sort((a, b) => stringCompare(a.name, b.name));
 
         await eachSeries(potentialVideos, async (camVideo) => {
-            await fileStorage.storeVideo(camVideo.name, await camVideo.getStream());
+            await fileStorage.storeVideo(camVideo.name, () => camVideo.getStream());
 
             try {
                 await camVideo.delete();

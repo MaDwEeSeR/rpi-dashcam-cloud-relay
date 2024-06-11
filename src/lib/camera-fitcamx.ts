@@ -69,17 +69,17 @@ class FitcamxFile {
         this.timestamp = moment(this.name.substring(0, 14), "YYYYMMDDHHmmss", true);
     }
 
-    async getContent() {
-        if (!this._content) {
-            const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`)));
-            this._content = {
-                blob: (await res.blob()) as Blob,
-                mimetype: res.headers.get('Content-Type') ?? "application/octet-stream"
-            };
-        }
+    // async getContent() {
+    //     if (!this._content) {
+    //         const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`)));
+    //         this._content = {
+    //             blob: (await res.blob()) as Blob,
+    //             mimetype: res.headers.get('Content-Type') ?? "application/octet-stream"
+    //         };
+    //     }
 
-        return this._content!;
-    }
+    //     return this._content!;
+    // }
 
     async getStream() {
         const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`)));

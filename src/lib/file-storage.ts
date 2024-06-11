@@ -36,7 +36,9 @@ async function checkTransferDirectory() {
     }
 }
 
-async function storeVideo(name:string, stream:Readable) {
+type StreamProducer = () => Promise<Readable>;
+
+async function storeVideo(name:string, openStream:StreamProducer) {
     await checkTransferDirectory();
     const l = log.child({function:storeVideo.name});
 
@@ -50,7 +52,7 @@ async function storeVideo(name:string, stream:Readable) {
     l.debug({filename: name}, "Writing file.");
     let filePath = path.join(VIDEO_TRANSFER_PATH, name);
     try {
-        await fs.writeFile(filePath, stream);
+        await fs.writeFile(filePath, await openStream());
         await writeStorageHistory(name);
         log.info({filePath}, "Wrote file.");
     }
