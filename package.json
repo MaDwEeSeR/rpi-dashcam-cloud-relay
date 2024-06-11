@@ -35,7 +35,6 @@
     "@types/bunyan": "^1.8.8",
     "@types/node": "^20.5.7",
     "@types/node-fetch": "^2.6.4",
-    "@types/readable-stream": "^4.0.14",
     "typescript": "^5.2.2"
   },
   "dependencies": {
@@ -47,7 +46,6 @@
     "dotenv": "^16.3.1",
     "moment": "^2.29.4",
     "node-fetch": "^3.3.2",
-    "node-html-parser": "^6.1.6",
-    "readable-stream": "^3.6.2"
+    "node-html-parser": "^6.1.6"
   }
 }

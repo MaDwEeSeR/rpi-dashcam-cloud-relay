@@ -43,12 +43,12 @@ if (isEmpty(CAMERA_SSID)) {
                 heartbeatTimeout = null;
             }
 
-            const ssid = await wifi.currentSsid();
-            if (ssid !== CAMERA_SSID) {
-                return;
-            }
-
             try {
+                const ssid = await wifi.currentSsid();
+                if (ssid !== CAMERA_SSID) {
+                    return;
+                }
+
                 await downloadVideosFromCamera();
             } catch (err) {
                 logger.error({err}, `Error downloading video from camera.`);

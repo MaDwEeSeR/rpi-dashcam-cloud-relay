@@ -8,7 +8,7 @@ import { eachLimit } from 'async';
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const HEARTBEAT_DELTA = 30*1000; // 30 seconds
-const UPLOAD_THROTTLE = 10;
+const UPLOAD_THROTTLE = 1; // To save on memory, as we cannot stream from local files :(
 
 if (isEmpty(CAMERA_SSID)) {
     logger.error("CAMERA_SSID not set.")
