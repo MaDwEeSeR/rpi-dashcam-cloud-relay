@@ -26,7 +26,7 @@ export async function uploadFiles(paths:string[], cb?:UploadFilesProgressCallbac
     const l = log.child({function:uploadFiles.name});
 
     function onUploadProgress(e:{err?:Error, file:File, apiResponse:any}) {
-        l.debug({filename:e.file.name, err:e.err}, "upload progress event");
+        l.debug({filename:e.file?.name, err:e.err}, "upload progress event");
 
         cb && cb({ name: e.file.name, err: e.err });
     };
