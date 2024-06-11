@@ -20,26 +20,16 @@ interface UploadFilesProgress {
     err?:Error
 }
 
-type UploadFilesProgressCallback = (progress:UploadFilesProgress) => void;
-
-export async function uploadFiles(paths:string[], cb?:UploadFilesProgressCallback) {
+export async function uploadFiles(paths:string[]) {
     const l = log.child({function:uploadFiles.name});
 
-    function onUploadProgress(e:{err?:Error, file?:File, apiResponse:any}) {
-        l.debug({event:e}, "upload progress event");
-
-        cb && cb({ name: e.file?.name, err: e.err });
-    };
-
     const options:UploadManyFilesOptions = {
-        skipIfExists: true,
-        passthroughOptions: {
-            onUploadProgress: cb ? onUploadProgress : undefined
-        }
+        skipIfExists: true
     };
 
+    l.debug({paths}, "uploading files");
     const results = await transferManager.uploadManyFiles(paths, options);
-    l.debug({results}, "uploadManyFiles complete.");
+    l.debug({results}, "upload complete");
     return results.map(res => ({
         name: res[0].name
     }) as UploadFilesProgress);
