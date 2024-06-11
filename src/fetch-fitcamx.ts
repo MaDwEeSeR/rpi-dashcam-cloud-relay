@@ -5,16 +5,16 @@ import { logger } from "./lib/logger.js";
 import { isEmpty, stringCompare } from "./lib/util.js";
 import { useWifi } from "./lib/wifi.js";
 import { useCamera } from "./lib/camera-fitcamx.js";
-import { storeVideo } from "./lib/file-storage.js";
+import { fileStorage } from "./lib/file-storage.js";
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
+const HEARTBEAT_DELTA = 10*60*1000; // 10 minutes
 
 if (isEmpty(CAMERA_SSID)) {
     logger.error("CAMERA_SSID not set.")
     process.exit(1);
 }
 
-const HEARTBEAT_DELTA = 10*60*1000; // 10 minutes
 
 // main
 (async () => {
@@ -22,11 +22,6 @@ const HEARTBEAT_DELTA = 10*60*1000; // 10 minutes
 
     await useWifi(async (wifi) => {
         wifi.onConnect(ws => {
-            if (heartbeatTimeout) {
-                clearTimeout(heartbeatTimeout);
-                heartbeatTimeout = null;
-            }
-
             if (ws.ssid == CAMERA_SSID) {
                 onConnectedToCamera();
             }
@@ -43,6 +38,11 @@ const HEARTBEAT_DELTA = 10*60*1000; // 10 minutes
         await onConnectedToCamera();
 
         async function onConnectedToCamera() {
+            if (heartbeatTimeout) {
+                clearTimeout(heartbeatTimeout);
+                heartbeatTimeout = null;
+            }
+
             const ssid = await wifi.currentSsid();
             if (ssid !== CAMERA_SSID) {
                 return;
@@ -60,13 +60,6 @@ const HEARTBEAT_DELTA = 10*60*1000; // 10 minutes
     });
 })();
 
-interface VideoMeta {
-    name: string
-    timestamp: Moment
-    mimetype: string
-    cameraPath: string
-}
-
 async function downloadVideosFromCamera() {
     let l = logger.child({function:downloadVideosFromCamera.name});
     l.trace("enter");
@@ -78,14 +71,8 @@ async function downloadVideosFromCamera() {
         potentialVideos.sort((a, b) => stringCompare(a.name, b.name));
 
         await eachSeries(potentialVideos, async (camVideo) => {
-            await storeVideo({
-                name: camVideo.name,
-                timestamp: camVideo.timestamp,
-                cameraPath: camVideo.path,
-                mimetype: async () => (await camVideo.getContent()).mimetype,
-                stream: async () => (await camVideo.getContent()).blob.stream()
-            });
-            
+            await fileStorage.storeVideo(camVideo.name, await camVideo.getStream());
+
             try {
                 await camVideo.delete();
             } catch (err) {

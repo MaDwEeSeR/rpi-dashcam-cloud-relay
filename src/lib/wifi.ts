@@ -1,4 +1,4 @@
-import { exec, spawn, ChildProcess, ChildProcessWithoutNullStreams } from 'child_process';
+import { exec, spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import { logger as parentLogger } from "./logger.js";
 import { EventEmitter } from 'events';
 

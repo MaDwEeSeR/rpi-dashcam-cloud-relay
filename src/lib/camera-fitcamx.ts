@@ -1,6 +1,7 @@
 import { Blob } from 'buffer';
 import { map } from "async";
 import { basename } from "path";
+import { Readable } from 'stream';
 import fetch, { Response } from "node-fetch";
 import { parse } from 'node-html-parser';
 import moment, { Moment } from "moment";
@@ -78,6 +79,15 @@ class FitcamxFile {
         }
 
         return this._content!;
+    }
+
+    async getStream() {
+        const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`)));
+        if (!res.body) {
+            throw new Error("null body!");
+        }
+
+        return res.body as Readable;
     }
 
     async delete() {
