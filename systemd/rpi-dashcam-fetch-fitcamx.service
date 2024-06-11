@@ -1,5 +1,5 @@
 [Unit]
-Description=Dashcam Cloud Relay
+Description=FitcamX Video Fetcher
 Requires=dhcpcd.service
 After=dhcpcd.service
 StartLimitBurst=10
