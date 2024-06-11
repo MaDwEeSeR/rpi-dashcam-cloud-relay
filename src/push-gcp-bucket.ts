@@ -53,7 +53,7 @@ if (isEmpty(CAMERA_SSID)) {
                             l.error(fileProgress, "Error uploading video to GCP Bucket.");
                         } else {
                             l.info({filename:fileProgress.name}, "Uploaded file to GCP Bucket.");
-                            await fileStorage.deleteVideo(fileProgress.name);
+                            await fileStorage.deleteVideo(fileProgress.name!);
                         }
                     });
                 }

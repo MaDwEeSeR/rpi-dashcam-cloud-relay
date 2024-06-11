@@ -16,7 +16,7 @@ const bucket = storage.bucket(BUCKET_ID!);
 const transferManager = new TransferManager(bucket);
 
 interface UploadFilesProgress {
-    name:string,
+    name?:string,
     err?:Error
 }
 
@@ -25,10 +25,10 @@ type UploadFilesProgressCallback = (progress:UploadFilesProgress) => void;
 export async function uploadFiles(paths:string[], cb?:UploadFilesProgressCallback) {
     const l = log.child({function:uploadFiles.name});
 
-    function onUploadProgress(e:{err?:Error, file:File, apiResponse:any}) {
+    function onUploadProgress(e:{err?:Error, file?:File, apiResponse:any}) {
         l.debug({filename:e.file?.name, err:e.err}, "upload progress event");
 
-        cb && cb({ name: e.file.name, err: e.err });
+        cb && cb({ name: e.file?.name, err: e.err });
     };
 
     const options:UploadManyFilesOptions = {
