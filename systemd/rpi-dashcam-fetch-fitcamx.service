@@ -1,0 +1,19 @@
+[Unit]
+Description=Dashcam Cloud Relay
+Requires=dhcpcd.service
+After=dhcpcd.service
+StartLimitBurst=10
+StartLimitIntervalSec=120
+StartLimitAction=reboot
+
+[Service]
+Type=exec
+Restart=always
+RestartSec=10
+Environment='CAMERA_SSID=CAR-DJ94228'
+Environment='NODE_ENV=production'
+WorkingDirectory=/opt/rpi-dashcam-cloud-relay
+ExecStart=/usr/local/bin/node --no-expose-wasm ./build/fetch-fitcamx.js
+
+[Install]
+WantedBy=multi-user.target

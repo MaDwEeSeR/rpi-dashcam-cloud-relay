@@ -11,11 +11,11 @@ Type=exec
 Restart=always
 RestartSec=10
 Environment='CAMERA_SSID=CAR-DJ94228'
-Environment='GOOGLE_DRIVE_FOLDER_ID=1agS1TPSr-OoKnnyaAm5IHch8sOCymMEe'
-Environment='GOOGLE_APPLICATION_CREDENTIALS=/etc/google-serviceaccount.json'
+Environment='GOOGLE_BUCKET=allerslev-jorgensen-dashcam-ingest-u90d1r'
+Environment='GOOGLE_APPLICATION_CREDENTIALS=/etc/google-service-account.json'
 Environment='NODE_ENV=production'
 WorkingDirectory=/opt/rpi-dashcam-cloud-relay
-ExecStart=/usr/local/bin/node --no-expose-wasm ./build/index.js
+ExecStart=/usr/local/bin/node --no-expose-wasm ./build/push-gcp-bucket.js
 
 [Install]
 WantedBy=multi-user.target
