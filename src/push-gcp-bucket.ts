@@ -2,11 +2,13 @@ import 'dotenv/config';
 import { isEmpty } from "./lib/util.js";
 import { logger } from "./lib/logger.js";
 import { useWifi } from "./lib/wifi.js";
-import { uploadFiles } from './lib/gcp-bucket.js';
+import { gcpBucket } from './lib/gcp-bucket.js';
 import { fileStorage } from './lib/file-storage.js';
+import { eachLimit } from 'async';
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const HEARTBEAT_DELTA = 30*1000; // 30 seconds
+const UPLOAD_THROTTLE = 10;
 
 if (isEmpty(CAMERA_SSID)) {
     logger.error("CAMERA_SSID not set.")
@@ -47,12 +49,15 @@ if (isEmpty(CAMERA_SSID)) {
                 }
 
                 const videos = await fileStorage.loadVideos();
-                if (!isEmpty(videos)) {
-                    const res = await uploadFiles(videos.map(v => v.path));
-                    l.debug({results:res}, "upload results");
-                }
+                await eachLimit(videos, UPLOAD_THROTTLE, async (fsVideo) => {
+                    l.debug({filename:fsVideo.name}, "Uploading video.");
+                    await gcpBucket.writeFile(fsVideo.name, () => fsVideo.getStream());
+                    l.info({filename:fsVideo.name}, "Uploaded video.");
+
+                    await fsVideo.delete();
+                });
             } catch (err) {
-                l.error({err}, "Error uploading videos to GCP Bucket.");
+                l.error({err}, "Error while uploading videos to GCP Storage Bucket.");
             } finally {
                 heartbeatTimeout = setTimeout(onConnectedToInternet, HEARTBEAT_DELTA);
             }
