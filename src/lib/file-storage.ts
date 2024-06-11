@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { Readable } from "stream";
 import { logger } from "./logger.js";
+import { ReadableStream } from "stream/web";
 
 const TMPDIR = process.env.TMPDIR ?? "/tmp/";
 const VIDEO_TRANSFER_PATH = path.normalize(process.env.VIDEO_TRANSFER_PATH ?? path.join(TMPDIR, "rpi-dashcam-fetch-fitcamx/"));
@@ -85,8 +86,11 @@ async function loadVideos() {
             path: p,
             name: fn,
             getStream: async () => {
-                const file = await fs.open(p, "r");
-                return file.createReadStream({autoClose:true});        
+                const buffer = await fs.readFile(p);
+                return Readable.from(buffer, {autoDestroy:true, objectMode:false});
+
+                //const file = await fs.open(p, "r");
+                //return file.createReadStream({autoClose:true}); // createReadStream does not exist before Node 16.11 :(
             },
             delete: () => fs.rm(p, {force:false})
         };
