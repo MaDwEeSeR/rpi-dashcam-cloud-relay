@@ -40,12 +40,12 @@ if (isEmpty(CAMERA_SSID)) {
                 heartbeatTimeout = null;
             }
 
-            const ssid = await wifi.currentSsid();
-            if (ssid === CAMERA_SSID) {
-                return;
-            }
-
             try {
+                const ssid = await wifi.currentSsid();
+                if (ssid === CAMERA_SSID) {
+                    return;
+                }
+
                 const videos = await fileStorage.loadVideos();
                 if (!isEmpty(videos)) {
                     await uploadFiles(videos.map(v => v.path), async (fileProgress) => {
