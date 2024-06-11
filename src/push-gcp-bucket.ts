@@ -50,9 +50,9 @@ if (isEmpty(CAMERA_SSID)) {
                 if (!isEmpty(videos)) {
                     await uploadFiles(videos.map(v => v.path), async (fileProgress) => {
                         if (fileProgress.err) {
-                            l.error(fileProgress, "Error uploading video to GCP Bucket.");
+                            l.error({fileProgress}, "Error uploading video to GCP Bucket.");
                         } else {
-                            l.info({filename:fileProgress.name}, "Uploaded file to GCP Bucket.");
+                            l.info({fileProgress}, "Uploaded file to GCP Bucket.");
                             await fileStorage.deleteVideo(fileProgress.name!);
                         }
                     });

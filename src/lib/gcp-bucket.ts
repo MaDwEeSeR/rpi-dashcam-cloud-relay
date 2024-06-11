@@ -26,7 +26,7 @@ export async function uploadFiles(paths:string[], cb?:UploadFilesProgressCallbac
     const l = log.child({function:uploadFiles.name});
 
     function onUploadProgress(e:{err?:Error, file?:File, apiResponse:any}) {
-        l.debug({filename:e.file?.name, err:e.err}, "upload progress event");
+        l.debug({event:e}, "upload progress event");
 
         cb && cb({ name: e.file?.name, err: e.err });
     };
@@ -39,6 +39,7 @@ export async function uploadFiles(paths:string[], cb?:UploadFilesProgressCallbac
     };
 
     const results = await transferManager.uploadManyFiles(paths, options);
+    l.debug({results}, "uploadManyFiles complete.");
     return results.map(res => ({
         name: res[0].name
     }) as UploadFilesProgress);
