@@ -5,12 +5,14 @@ After=dhcpcd.service
 StartLimitBurst=10
 StartLimitIntervalSec=120
 StartLimitAction=reboot
+RequiresMountsFor=/mnt/dashcam-storage
 
 [Service]
 Type=exec
 Restart=always
 RestartSec=10
 Environment='CAMERA_SSID=CAR-DJ94228'
+Environment='VIDEO_TRANSFER_PATH=/mnt/dashcam-storage'
 Environment='GOOGLE_BUCKET=allerslev-jorgensen-dashcam-ingest-u90d1r'
 Environment='GOOGLE_APPLICATION_CREDENTIALS=/etc/google-serviceaccount.json'
 Environment='NODE_ENV=production'

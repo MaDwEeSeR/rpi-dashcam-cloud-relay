@@ -2,7 +2,6 @@ import fs from "fs/promises";
 import path from "path";
 import { Readable } from "stream";
 import { logger } from "./logger.js";
-import { ReadableStream } from "stream/web";
 
 const TMPDIR = process.env.TMPDIR ?? "/tmp/";
 const VIDEO_TRANSFER_PATH = path.normalize(process.env.VIDEO_TRANSFER_PATH ?? path.join(TMPDIR, "rpi-dashcam-fetch-fitcamx/"));
