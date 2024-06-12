@@ -18,14 +18,22 @@ try {
     process.exit(2);
 }
 
-const STORAGE_HISTORY_FILE = fs.open(STORAGE_HISTORY_PATH, 'a+');
+async function useHistoryFile<R>(cb: (file:fs.FileHandle) => Promise<R>) {
+    const f = await fs.open(STORAGE_HISTORY_PATH, 'a+');
+    try {
+        return cb(f);
+    }
+    finally {
+        await f.close();
+    }
+}
 
 async function writeStorageHistory(s:string) {
-    await (await STORAGE_HISTORY_FILE).writeFile(s, "utf8");
+    await useHistoryFile(f => f.writeFile(s, "utf8"));
 }
 
 async function readStorageHistory() {
-    return (await STORAGE_HISTORY_FILE).readFile("utf8");
+    return useHistoryFile(f => f.readFile("utf8"));
 }
 
 type StreamProducer = () => Promise<Readable>;
