@@ -7,7 +7,6 @@ import { ReadableStream } from "stream/web";
 const TMPDIR = process.env.TMPDIR ?? "/tmp/";
 const VIDEO_TRANSFER_PATH = path.normalize(process.env.VIDEO_TRANSFER_PATH ?? path.join(TMPDIR, "rpi-dashcam-fetch-fitcamx/"));
 const STORAGE_HISTORY_PATH = path.join(VIDEO_TRANSFER_PATH, ".fetch_history");
-const VIDEO_TRANSFER_LIMIT = Number.parseInt(process.env.VIDEO_TRANSFER_LIMIT ?? "80");
 
 const log = logger.child({module:"file-storage"});
 
@@ -30,22 +29,14 @@ async function readStorageHistory() {
     return (await STORAGE_HISTORY_FILE).readFile("utf8");
 }
 
-async function checkTransferDirectory() {
-    const files = await fs.readdir(VIDEO_TRANSFER_PATH);
-    if (files.length < VIDEO_TRANSFER_LIMIT) {
-        throw new Error("VIDEO_TRANSFER_LIMIT exceeded!");
-    }
-}
-
 type StreamProducer = () => Promise<Readable>;
 
 async function storeVideo(name:string, openStream:StreamProducer) {
-    await checkTransferDirectory();
     const l = log.child({function:storeVideo.name});
 
     const lastStoredFilename:string = await readStorageHistory();
 
-    if (name < lastStoredFilename) {
+    if (name <= lastStoredFilename) {
         l.warn({filename:name}, "Already stored newer video file, file skipped.");
         return;
     }
