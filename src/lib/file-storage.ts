@@ -19,7 +19,7 @@ try {
 }
 
 async function useHistoryFile<R>(cb: (file:fs.FileHandle) => Promise<R>) {
-    const f = await fs.open(STORAGE_HISTORY_PATH, 'a+');
+    const f = await fs.open(STORAGE_HISTORY_PATH, 'w+');
     try {
         return cb(f);
     }
