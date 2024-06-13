@@ -17,11 +17,11 @@ const bucket = storage.bucket(BUCKET_ID!);
 
 type StreamProducer = () => Promise<Readable>;
 
-async function writeFile(name:string, openReadStream:StreamProducer) {
+async function writeFileFromStream(name:string, openReadStream:StreamProducer) {
     return new Promise<void>(async (resolve, reject) => {
         const file = bucket.file(name);
 
-        const inStream = await openReadStream();    
+        const inStream = await openReadStream();
 
         inStream.pipe(file.createWriteStream())
             .on("error", reject)
@@ -29,6 +29,13 @@ async function writeFile(name:string, openReadStream:StreamProducer) {
     });
 }
 
+async function writeFileFromDisk(name:string, filePath:string) {
+    return bucket.upload(filePath, {
+        destination: name
+    });
+}
+
 export const gcpBucket = {
-    writeFile
+    writeFileFromDisk,
+    writeFileFromStream
 };

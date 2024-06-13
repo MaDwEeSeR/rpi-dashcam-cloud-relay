@@ -51,7 +51,7 @@ if (isEmpty(CAMERA_SSID)) {
                 const videos = await fileStorage.loadVideos();
                 await eachLimit(videos, UPLOAD_THROTTLE, async (fsVideo) => {
                     l.debug({filename:fsVideo.name}, "Uploading video.");
-                    await gcpBucket.writeFile(fsVideo.name, () => fsVideo.getStream());
+                    await gcpBucket.writeFileFromDisk(fsVideo.name, fsVideo.path);
                     l.info({filename:fsVideo.name}, "Uploaded video.");
 
                     await fsVideo.delete();
