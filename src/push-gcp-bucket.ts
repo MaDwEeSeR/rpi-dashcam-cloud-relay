@@ -8,7 +8,7 @@ import { eachLimit } from 'async';
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const HEARTBEAT_DELTA = 30*1000; // 30 seconds
-const UPLOAD_THROTTLE = 1; // To save on memory, as we cannot stream from local files :(
+const UPLOAD_THROTTLE = 2;
 
 if (isEmpty(CAMERA_SSID)) {
     logger.error("CAMERA_SSID not set.")
@@ -52,14 +52,16 @@ if (isEmpty(CAMERA_SSID)) {
 
                 const videos = await fileStorage.loadVideos();
                 await eachLimit(videos, UPLOAD_THROTTLE, async (fsVideo) => {
-                    l.debug({filename:fsVideo.name}, "Uploading video.");
-                    await gcpBucket.writeFileFromDisk(fsVideo.name, fsVideo.path);
-                    l.info({filename:fsVideo.name}, "Uploaded video.");
+                    try {
+                        l.debug({filename:fsVideo.name}, "Uploading video.");
+                        await gcpBucket.writeFileFromDisk(fsVideo.name, fsVideo.path);
+                        l.info({filename:fsVideo.name}, "Uploaded video.");
 
-                    await fsVideo.delete();
+                        await fsVideo.delete();
+                    } catch (err) {
+                        l.error({err, filename:fsVideo.name}, "Error uploading video.");
+                    }
                 });
-            } catch (err) {
-                l.error({err}, "Error while uploading videos to GCP Storage Bucket.");
             } finally {
                 heartbeatTimeout = setTimeout(onConnectedToInternet, HEARTBEAT_DELTA);
             }
