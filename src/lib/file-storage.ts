@@ -29,11 +29,23 @@ async function useHistoryFile<R>(cb: (file:fs.FileHandle) => Promise<R>) {
 }
 
 async function writeStorageHistory(s:string) {
-    await useHistoryFile(f => f.writeFile(s, "utf8"));
+    const f = await fs.open(STORAGE_HISTORY_PATH, 'w');
+    try {
+        f.writeFile(s, "utf8");
+    } finally {
+        await f.close();
+    }
 }
 
 async function readStorageHistory() {
-    return useHistoryFile(f => f.readFile("utf8"));
+    const f = await fs.open(STORAGE_HISTORY_PATH, 'r');
+    try {
+        return f.readFile("utf8");
+    } catch (err) {
+        return "0";
+    } finally {
+        await f.close();
+    }
 }
 
 type StreamProducer = () => Promise<Readable>;
