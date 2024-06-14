@@ -22,10 +22,12 @@ if (isEmpty(CAMERA_SSID)) {
 
     await useWifi(async (wifi) => {
         wifi.onConnect(ws => {
+            l.info({ssid:ws.ssid}, "WiFi connected.");
             onConnectedToInternet();
         });
 
         wifi.onDisconnect(() => {
+            l.info("WiFi disconnected.");
             if (heartbeatTimeout) {
                 clearTimeout(heartbeatTimeout);
                 heartbeatTimeout = null;
