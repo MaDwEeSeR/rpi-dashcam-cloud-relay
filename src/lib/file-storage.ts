@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { Readable } from "stream";
 import { logger } from "./logger.js";
+import { reduce } from "async";
 
 const TMPDIR = process.env.TMPDIR ?? "/tmp/";
 const VIDEO_TRANSFER_PATH = path.normalize(process.env.VIDEO_TRANSFER_PATH ?? path.join(TMPDIR, "rpi-dashcam-fetch-fitcamx/"));
@@ -84,11 +85,14 @@ interface FileWithStream {
 
 async function loadVideos() {
     const filenames = await fs.readdir(VIDEO_TRANSFER_PATH);
-    const files:FileWithStream[] = [];
-
-    filenames.forEach(fn => {
+    const files:FileWithStream[] = await reduce(filenames, new Array<FileWithStream>(), async (a, fn) => {
         if (fn.startsWith(".")) {
-            return;
+            return a;
+        }
+
+        const fsStats = await fs.stat(fn);
+        if (fsStats.isDirectory()) {
+            return a;
         }
 
         const p = path.join(VIDEO_TRANSFER_PATH, fn);
@@ -105,7 +109,9 @@ async function loadVideos() {
             delete: () => fs.rm(p, {force:false})
         };
 
-        files.push(videoFile);
+        a?.push(videoFile);
+
+        return a;
     });
 
     return files;
