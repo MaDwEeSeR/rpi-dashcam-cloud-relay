@@ -53,9 +53,14 @@ if (isEmpty(CAMERA_SSID)) {
                 const videos = await fileStorage.loadVideos();
                 await eachLimit(videos, UPLOAD_THROTTLE, async (fsVideo) => {
                     try {
-                        l.debug({filename:fsVideo.name}, "Uploading video.");
-                        await gcpBucket.writeFileFromDisk(fsVideo.name, fsVideo.path);
-                        l.info({filename:fsVideo.name}, "Uploaded video.");
+                        const fileExists = await gcpBucket.fileExists(fsVideo.name);
+                        if (fileExists) {
+                            l.debug({filename:fsVideo.name}, "Video already exists.");
+                        } else {
+                            l.debug({filename:fsVideo.name}, "Uploading video.");
+                            await gcpBucket.writeFileFromDisk(fsVideo.name, fsVideo.path);
+                            l.info({filename:fsVideo.name}, "Uploaded video.");    
+                        }
 
                         await fsVideo.delete();
                     } catch (err) {

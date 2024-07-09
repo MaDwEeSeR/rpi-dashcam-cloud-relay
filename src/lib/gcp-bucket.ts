@@ -17,6 +17,11 @@ const bucket = storage.bucket(BUCKET_ID!);
 
 type StreamProducer = () => Promise<Readable>;
 
+async function fileExists(name:string) : Promise<boolean> {
+    const [exists] = await bucket.file(name).exists();
+    return exists;
+}
+
 async function writeFileFromStream(name:string, openReadStream:StreamProducer) {
     return new Promise<void>(async (resolve, reject) => {
         const file = bucket.file(name);
@@ -36,6 +41,7 @@ async function writeFileFromDisk(name:string, filePath:string) {
 }
 
 export const gcpBucket = {
+    fileExists,
     writeFileFromDisk,
     writeFileFromStream
 };
