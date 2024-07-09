@@ -90,16 +90,13 @@ async function loadVideos() {
             return a;
         }
 
-        if (fn == "lost+found") {
-            return a;
-        }
+        const p = path.join(VIDEO_TRANSFER_PATH, fn);
 
-        const fsStats = await fs.stat(fn);
+        const fsStats = await fs.stat(p);
         if (fsStats.isDirectory()) {
             return a;
         }
 
-        const p = path.join(VIDEO_TRANSFER_PATH, fn);
         let videoFile:FileWithStream = {
             path: p,
             name: fn,
