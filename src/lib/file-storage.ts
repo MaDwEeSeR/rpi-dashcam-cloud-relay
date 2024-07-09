@@ -90,6 +90,10 @@ async function loadVideos() {
             return a;
         }
 
+        if (fn == "lost+found") {
+            return a;
+        }
+
         const fsStats = await fs.stat(fn);
         if (fsStats.isDirectory()) {
             return a;
