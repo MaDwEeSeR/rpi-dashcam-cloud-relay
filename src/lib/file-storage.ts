@@ -32,7 +32,8 @@ async function useHistoryFile<R>(cb: (file:fs.FileHandle) => Promise<R>) {
 async function writeStorageHistory(s:string) {
     const f = await fs.open(STORAGE_HISTORY_PATH, 'w');
     try {
-        f.writeFile(s, "utf8");
+        await f.writeFile(s, "utf8");
+        await f.sync();
     } finally {
         await f.close();
     }
@@ -41,7 +42,7 @@ async function writeStorageHistory(s:string) {
 async function readStorageHistory() {
     const f = await fs.open(STORAGE_HISTORY_PATH, 'r');
     try {
-        return f.readFile("utf8");
+        return await f.readFile("utf8");
     } catch (err) {
         return "0";
     } finally {
@@ -64,7 +65,14 @@ async function storeVideo(name:string, openStream:StreamProducer) {
     l.debug({filename: name}, "Writing file.");
     let filePath = path.join(VIDEO_TRANSFER_PATH, name);
     try {
-        await fs.writeFile(filePath, await openStream());
+        const f = await fs.open(filePath, 'w');
+        try {
+            await fs.writeFile(f, await openStream());
+            await f.sync();
+        } finally {
+            await f.close();
+        }
+
         await writeStorageHistory(name);
         log.info({filePath}, "Wrote file.");
     }
