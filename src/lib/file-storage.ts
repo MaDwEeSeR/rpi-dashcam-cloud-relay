@@ -40,13 +40,16 @@ async function writeStorageHistory(s:string) {
 }
 
 async function readStorageHistory() {
-    const f = await fs.open(STORAGE_HISTORY_PATH, 'r');
+    let f = null;
     try {
+        f = await fs.open(STORAGE_HISTORY_PATH, 'r');
         return await f.readFile("utf8");
     } catch (err) {
         return "0";
     } finally {
-        await f.close();
+        if (f) {
+            await f.close();
+        }
     }
 }
 
