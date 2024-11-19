@@ -1,0 +1,11 @@
+[Unit]
+Description=Dashcam Temporary Storage Mount
+
+[Mount]
+What=/var/dashcam_storage.ext4
+Where=/mnt/dashcam_storage
+Type=ext4
+Options=rw,noatime,loop
+
+[Install]
+WantedBy=multi-user.target
