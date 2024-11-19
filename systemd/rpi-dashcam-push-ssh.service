@@ -1,0 +1,24 @@
+[Unit]
+Description=SSH Video Pusher
+Requires=dhcpcd.service
+After=dhcpcd.service
+StartLimitBurst=10
+StartLimitIntervalSec=120
+StartLimitAction=reboot
+RequiresMountsFor=/mnt/dashcam_storage
+
+[Service]
+Type=exec
+Restart=always
+RestartSec=10
+Environment='CAMERA_SSID=CAR-DJ94228'
+Environment='VIDEO_TRANSFER_PATH=/mnt/dashcam_storage'
+Environment='SSH_HOST=192.168.1.1'
+Environment='SSH_USER=ubuntu'
+Environment='SSH_KEYPATH=/home/ubuntu/.ssh/id_rsa'
+Environment='NODE_ENV=production'
+WorkingDirectory=/opt/rpi-dashcam-cloud-relay
+ExecStart=/usr/local/bin/node --no-expose-wasm ./build/push-ssh.js
+
+[Install]
+WantedBy=multi-user.target
