@@ -27,18 +27,24 @@ class FitcamxCameraController {
         l.trace("enter");
 
         const files:Array<FitcamxFile> = (await map(LOCKED_VIDEO_FOLDERS, async (folder:string) => {
-            const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`)));
-            const html = parse(await res.text());
-            l.debug({html:html.outerHTML}, "fetched html from camera");
-            const videoFiles = html.querySelectorAll("a[href$=TS]") // select all links that end in TS
-                .map(e => {
-                    const path = e.getAttribute("href");
-                    if (!path) {
-                        throw new Error("Empty video path!");
-                    }
-                    return new FitcamxFile(path);
-                });
-            return videoFiles;
+            const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`), 404));
+
+            if (res.status === 404) {
+                l.debug({folder}, "Could not find folder on camera");
+                return [];
+            } else {
+                const html = parse(await res.text());
+                l.debug({html:html.outerHTML}, "fetched html from camera");
+                const videoFiles = html.querySelectorAll("a[href$=TS]") // select all links that end in TS
+                    .map(e => {
+                        const path = e.getAttribute("href");
+                        if (!path) {
+                            throw new Error("Empty video path!");
+                        }
+                        return new FitcamxFile(path);
+                    });
+                return videoFiles;
+            }
         })).flat().sort((a, b) => stringCompare(a.name, b.name));
 
         l.debug({files}, "return");
