@@ -2,9 +2,10 @@ import { Blob } from 'buffer';
 import { map } from "async";
 import { basename } from "path";
 import { Readable } from 'stream';
-import fetch, { Response } from "node-fetch";
+import fetch, { RequestInit, Response } from "node-fetch";
 import { parse } from 'node-html-parser';
 import moment, { Moment } from "moment";
+import streamHead from 'stream-head';
 import { retry, stringCompare } from './util.js';
 import { logger as parentLogger } from "./logger.js";
 
@@ -18,6 +19,10 @@ export async function useCamera<R>(ctrl:(camera:FitcamxCameraController)=>Promis
 const CAMERA_IPADDRESS = "192.168.1.254";
 const LOCKED_VIDEO_FOLDERS = ["/CARDV/EMR/", "/CARDV/EMR_E/"];
 
+const REQUEST_OPTIONS:RequestInit = {
+    redirect: "error"
+};
+
 class FitcamxCameraController {
     constructor() {
     }
@@ -27,7 +32,7 @@ class FitcamxCameraController {
         l.trace("enter");
 
         const files:Array<FitcamxFile> = (await map(LOCKED_VIDEO_FOLDERS, async (folder:string) => {
-            const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`), 404));
+            const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${folder}`, REQUEST_OPTIONS), 404));
 
             if (res.status === 404) {
                 l.debug({folder}, "Could not find folder on camera");
@@ -87,13 +92,13 @@ class FitcamxFile {
     //     return this._content!;
     // }
 
-    async getStream() {
-        const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`)));
+    async getStream():Promise<Readable> {
+        const res = await retry(async () => checkStatus(await fetch(`http://${CAMERA_IPADDRESS}${this.path}`, REQUEST_OPTIONS)));
         if (!res.body) {
             throw new Error("null body!");
         }
 
-        return res.body as Readable;
+        return await validateStream(res.body) as Readable;
     }
 
     async delete() {
@@ -121,4 +126,14 @@ function checkStatus(response : Response, ...additionalAllowed:number[]) {
 	} else {
 		throw new FitcamxResponseError(response);
 	}
+}
+
+async function validateStream(inputStream:NodeJS.ReadableStream): Promise<NodeJS.ReadableStream> {
+    const { stream, head } = await streamHead( inputStream, { bytes: 1 } );
+
+    if (head[0] !== 0x47) {
+        throw new Error("Expected a Transport Stream header!");
+    }
+
+    return stream;
 }
