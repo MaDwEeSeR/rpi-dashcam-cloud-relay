@@ -8,7 +8,7 @@ import { eachLimit } from 'async';
 
 const CAMERA_SSID = process.env.CAMERA_SSID;
 const HEARTBEAT_DELTA = 30*1000; // 30 seconds
-const UPLOAD_THROTTLE = 2;
+const UPLOAD_THROTTLE = 1;
 
 if (isEmpty(CAMERA_SSID)) {
     logger.error("CAMERA_SSID not set.")
@@ -51,22 +51,25 @@ if (isEmpty(CAMERA_SSID)) {
                 }
 
                 const videos = await fileStorage.loadVideos();
-                await eachLimit(videos, UPLOAD_THROTTLE, async (fsVideo) => {
-                    try {
-                        const fileExists = await gcpBucket.fileExists(fsVideo.name);
-                        if (fileExists) {
-                            l.debug({filename:fsVideo.name}, "Video already exists.");
-                        } else {
-                            l.debug({filename:fsVideo.name}, "Uploading video.");
-                            await gcpBucket.writeFileFromDisk(fsVideo.name, fsVideo.path);
-                            l.info({filename:fsVideo.name}, "Uploaded video.");    
-                        }
 
-                        await fsVideo.delete();
-                    } catch (err) {
-                        l.error({err, filename:fsVideo.name}, "Error uploading video.");
+                await eachLimit(videos, UPLOAD_THROTTLE, async (fsVideo) => {
+                    const fileExists = await gcpBucket.fileExists(fsVideo.name);
+                    if (fileExists) {
+                        l.debug({filename:fsVideo.name}, "Video already exists.");
+                    } else {
+                        l.debug({
+                            filename:fsVideo.name,
+                            size: await fsVideo.getSize()
+                        }, "Uploading video.");
+
+                        await gcpBucket.writeFileFromDisk(fsVideo.name, fsVideo.path);
+                        l.info({filename:fsVideo.name}, "Uploaded video.");    
                     }
+
+                    await fsVideo.delete();
                 });
+            } catch (err) {
+                l.error({err}, "Error uploading video.");
             } finally {
                 heartbeatTimeout = setTimeout(onConnectedToInternet, HEARTBEAT_DELTA);
             }

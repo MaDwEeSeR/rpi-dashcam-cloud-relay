@@ -90,6 +90,7 @@ async function storeVideo(name:string, openStream:StreamProducer) {
 interface FileWithStream {
     path: string,
     name: string,
+    getSize: () => Promise<number>,
     getStream: () => Promise<Readable>,
     delete: () => Promise<void>
 }
@@ -111,6 +112,7 @@ async function loadVideos() {
         let videoFile:FileWithStream = {
             path: p,
             name: fn,
+            getSize: async () => (await fs.stat(p)).size,
             getStream: async () => {
                 const buffer = await fs.readFile(p);
                 return Readable.from(buffer, {autoDestroy:true, objectMode:false});
