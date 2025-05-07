@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Dascham Cloud Relay",
   "engines": {
-    "node": ">=0.10.3 <=16.3.0"
+    "node": ">=0.10.3"
   },
   "main": "build/index.js",
   "type": "module",
