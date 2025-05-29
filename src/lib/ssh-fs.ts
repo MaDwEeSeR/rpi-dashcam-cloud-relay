@@ -8,7 +8,7 @@ const log = logger.child({module:"ssh-fs"});
 const SSH_HOST = process.env.SSH_HOST;
 const SSH_USER = process.env.SSH_USER;
 const SSH_KEYPATH = process.env.SSH_KEYPATH;
-conct SSH_PASS = process.env.SSH_PASS;
+const SSH_PASS = process.env.SSH_PASS;
 const SSH_REMOTEPATH = process.env.SSH_REMOTEPATH;
 
 

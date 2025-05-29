@@ -1,7 +1,7 @@
 [Unit]
 Description=FitcamX Video Fetcher
-Requires=dhcpcd.service
-After=dhcpcd.service
+Requires=NetworkManager.service
+After=NetworkManager.service
 StartLimitBurst=10
 StartLimitIntervalSec=120
 StartLimitAction=reboot
@@ -11,11 +11,11 @@ RequiresMountsFor=/mnt/dashcam_storage
 Type=exec
 Restart=always
 RestartSec=10
-Environment='CAMERA_SSID=CAR-DJ94228'
+Environment='CAMERA_SSID=Polarstjernen'
 Environment='VIDEO_TRANSFER_PATH=/mnt/dashcam_storage'
 Environment='NODE_ENV=production'
 WorkingDirectory=/opt/rpi-dashcam-cloud-relay
-ExecStart=/usr/local/bin/node --no-expose-wasm ./build/fetch-fitcamx.js
+ExecStart=/usr/bin/node --no-expose-wasm ./build/fetch-fitcamx.js
 
 [Install]
 WantedBy=multi-user.target
